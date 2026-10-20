@@ -97,48 +97,18 @@ in
     noto-fonts-color-emoji
   ];
 
+  # Keep system-wide Bash and ble.sh support; user preferences live in Home Manager.
   programs.bash = {
     enable = true;
     blesh.enable = true;
     completion.enable = true;
-
-    shellAliases = {
-      la = "ls -lah";
-      gs = "git status";
-    };
-
-    interactiveShellInit = ''
-      eval "$(${pkgs.fzf}/bin/fzf --bash)"
-
-      # History
-      HISTSIZE=10000
-      HISTFILESIZE=20000
-      HISTCONTROL=ignoreboth:erasedups
-      shopt -s histappend
-      shopt -s checkwinsize
-    '';
   };
-
-  programs.zoxide = {
-    enable = true;
-    enableBashIntegration = true;
-  };
+  programs.fish.enable = true;
 
   environment.sessionVariables.EDITOR = "hx";
   environment.systemPackages = with pkgs; [
     nixfmt
     wget
-    git
-    delta
-    fzf
-    dnsutils # dig
-    bat
-    htop
-    fish
-    helix
-    eza
-    fd
-    ripgrep
     powertop
     usbutils # lsusb
     incus
