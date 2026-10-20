@@ -103,7 +103,6 @@ in
     blesh.enable = true;
     completion.enable = true;
   };
-  programs.fish.enable = true;
 
   environment.sessionVariables.EDITOR = "hx";
   environment.systemPackages = with pkgs; [

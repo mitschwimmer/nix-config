@@ -18,17 +18,15 @@
     '';
   };
 
-  programs.fish.enable = true;
-
   programs.fzf = {
     enable = true;
     enableBashIntegration = true;
-    enableFishIntegration = true;
+    enableFishIntegration = false;
   };
 
   programs.zoxide = {
     enable = true;
     enableBashIntegration = true;
-    enableFishIntegration = true;
+    enableFishIntegration = false;
   };
 }

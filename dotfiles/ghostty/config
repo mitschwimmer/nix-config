@@ -1,0 +1,42 @@
+font-family = JetBrainsMono Nerd Font
+theme = light:Gruvbox Light, dark:Gruvbox Dark
+mouse-hide-while-typing = true
+
+window-show-tab-bar = never
+gtk-toolbar-style = flat
+window-theme = ghostty
+
+window-padding-x = 10
+window-padding-y = 5
+window-height = 50
+window-width = 140
+
+# This copies terminfo to ssh remotes
+shell-integration-features = true
+
+keybind = ctrl+-=decrease_font_size:1
+keybind = ctrl++=increase_font_size:1
+keybind = ctrl+0=reset_font_size
+
+keybind = ctrl+a>t=toggle_command_palette
+
+# Create and navigate splits
+keybind = ctrl+a>s>l=new_split:right
+keybind = ctrl+a>s>j=new_split:left
+keybind = ctrl+a>s>j=new_split:down
+keybind = ctrl+a>s>k=new_split:up
+keybind = ctrl+a>s>z=toggle_split_zoom
+keybind = ctrl+a>h=goto_split:left
+keybind = ctrl+a>j=goto_split:down
+keybind = ctrl+a>l=goto_split:right
+keybind = ctrl+a>k=goto_split:up
+
+# Create and navigate tabs
+keybind = ctrl+a>c=new_tab
+keybind = ctrl+a>n=next_tab
+keybind = ctrl+a>p=previous_tab
+
+# Make Alt/Option+Arrow behave like Meta-b / Meta-f on every OS
+keybind = alt+left=text:\x1bb
+keybind = alt+right=text:\x1bf
+

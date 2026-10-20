@@ -10,12 +10,11 @@
 
   outputs =
     {
-      self,
       nixpkgs,
       nixpkgs-unstable,
       home-manager,
       ...
-    }@inputs:
+    }:
 
     let
       lib = nixpkgs.lib;
@@ -44,7 +43,6 @@
                 useUserPackages = true;
                 backupFileExtension = "hm-backup";
                 extraSpecialArgs = {
-                  inherit (inputs) self;
                   pkgs-unstable = import nixpkgs-unstable {
                     inherit system;
                     config.allowUnfree = true;
