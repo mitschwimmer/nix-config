@@ -1,0 +1,33 @@
+[user]
+	useConfigOnly = true
+[init]
+	defaultBranch = main
+[pull]
+	rebase = true
+[merge]
+	conflictstyle = zdiff3
+	log = 10
+[push]
+	autoSetupRemote = true
+[help]
+	autoCorrect = prompt
+[core]
+	pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true  # use n and N to move between diff sections
+    dark = true      # or light = true, or omit for auto-detection
+[advice]
+	statusHints = false
+	
+[includeIf "gitdir:~/Projects/assense/"]
+    path = ~/.config/git/gitconfig-assense
+
+[includeIf "gitdir:~/Projects/work.archaic/"]
+    path = ~/.config/git/gitconfig-archaic
+
+[includeIf "gitdir:~/Projects/mitschwimmer/"]
+    path = ~/.config/git/gitconfig-mitschwimmer
