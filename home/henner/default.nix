@@ -2,6 +2,7 @@
   imports = [
     ./packages.nix
     ./shell.nix
+    ./niri.nix
     ./dotfiles.nix
   ];
 

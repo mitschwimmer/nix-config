@@ -5,7 +5,6 @@
     "ghostty/config".source = ../../dotfiles/ghostty/config;
     "helix/config.toml".source = ../../dotfiles/helix/config.toml;
     "helix/languages.toml".source = ../../dotfiles/helix/languages.toml;
-    "niri/config.kdl".source = ../../dotfiles/niri/config.kdl;
     "quickshell/shell.qml".source = ../../dotfiles/quickshell/shell.qml;
     "gtk-3.0/bookmarks".source = ../../dotfiles/gtk-3.0/bookmarks;
 
