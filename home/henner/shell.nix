@@ -18,6 +18,12 @@
     '';
   };
 
+  programs.starship = {
+    enable = true;
+    enableBashIntegration = true;
+    enableFishIntegration = false;
+  };
+
   programs.fzf = {
     enable = true;
     enableBashIntegration = true;
