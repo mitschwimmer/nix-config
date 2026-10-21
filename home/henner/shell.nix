@@ -29,6 +29,7 @@
     enable = true;
     enableBashIntegration = true;
     enableFishIntegration = false;
+    presets = [ "plain-text-symbols" ];
   };
 
   programs.fzf = {
