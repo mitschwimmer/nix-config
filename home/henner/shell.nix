@@ -8,6 +8,7 @@
   home.file.".blerc".text = ''
     bleopt term_index_colors=16
     bleopt term_true_colors=
+    ble-face auto_complete='fg=8,italic'
   '';
 
   programs.bash = {
