@@ -4,6 +4,12 @@
     gs = "git status";
   };
 
+  # Use the terminal's ANSI palette, following Ghostty's light/dark Gruvbox theme.
+  home.file.".blerc".text = ''
+    bleopt term_index_colors=16
+    bleopt term_true_colors=
+  '';
+
   programs.bash = {
     enable = true;
     enableCompletion = true;
