@@ -2,6 +2,8 @@
   home.shellAliases = {
     la = "ls -lah";
     gs = "git status";
+    prefer-light = "dconf write /org/gnome/desktop/interface/color-scheme \"'prefer-light'\"";
+    prefer-dark = "dconf write /org/gnome/desktop/interface/color-scheme \"'prefer-dark'\"";
   };
 
   # Use the terminal's ANSI palette, following Ghostty's light/dark Gruvbox theme.
