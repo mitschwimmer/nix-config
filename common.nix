@@ -94,6 +94,7 @@ in
     gyre-fonts
     liberation_ttf
     unifont
+    inter
     noto-fonts-color-emoji
   ];
 
