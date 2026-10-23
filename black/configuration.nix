@@ -36,9 +36,7 @@
 
   # Populated from https://github.com/mitschwimmer.keys during provisioning.
   # Never fetch mutable SSH keys automatically during boot.
-  users.users.root.openssh.authorizedKeys.keyFiles = [
-    "/etc/ssh/authorized_keys.d/root"
-  ];
+  services.openssh.settings.AuthorizedKeysFile = "/etc/ssh/authorized_keys.d/%u";
 
   environment.systemPackages = with pkgs; [
     cryptsetup
