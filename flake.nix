@@ -2,6 +2,8 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    disko = { url = "github:nix-community/disko"; inputs.nixpkgs.follows = "nixpkgs"; };
+    lanzaboote = { url = "github:nix-community/lanzaboote"; inputs.nixpkgs.follows = "nixpkgs"; };
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -13,6 +15,8 @@
       nixpkgs,
       nixpkgs-unstable,
       home-manager,
+      disko,
+      lanzaboote,
       ...
     }:
 
@@ -57,6 +61,7 @@
     in
     {
       nixosConfigurations = {
+        black = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./black/configuration.nix ]; };
         mearock = makeWorkstation "mearock";
         meaxps = makeWorkstation "meaxps";
         meatab = makeWorkstation "meatab";
