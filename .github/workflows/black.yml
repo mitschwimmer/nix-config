@@ -1,0 +1,39 @@
+name: black NixOS build
+
+on:
+  pull_request:
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "black/**"
+      - ".github/workflows/black.yml"
+  push:
+    branches: [main]
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "black/**"
+      - ".github/workflows/black.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      # Until the new disko/lanzaboote inputs have been locked in flake.lock,
+      # resolve them on the runner. Commit the updated lock file before merging.
+      - name: Resolve flake inputs
+        run: nix flake lock
+      - name: Evaluate black
+        run: nix eval --raw .#nixosConfigurations.black.config.system.build.toplevel.drvPath
+      - name: Build black system
+        run: nix build --no-link --print-build-logs .#nixosConfigurations.black.config.system.build.toplevel
