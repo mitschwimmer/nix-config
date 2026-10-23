@@ -16,8 +16,9 @@ mechanism, NIC driver, and actual target disk must be checked locally.
 - TPM PCR 7 binds to Secure Boot policy, but it does not by itself attest the
   entire operating system. TPM-only automatic unlock is not equivalent to a PIN.
 - A Secure Boot firmware update/key change may require LUKS recovery.
-- The NVIDIA driver is intentionally not enabled in the first-boot server
-  baseline. This host should be reachable without GPU-specific drivers.
+- NVIDIA RTX 3060 proprietary-driver package is enabled at first boot using
+  the stable NVIDIA driver and its supported open kernel module. This requires
+  unfree package evaluation and a working kernel/driver combination.
 - No machine-specific NIC or storage driver information is available yet.
 - The placeholder disk device in `disko.nix` must never be used literally.
 
@@ -135,6 +136,7 @@ re-enroll TPM2. Do not erase old slots until recovery is verified.
 - [ ] Confirm TPM2 is available, firmware permits safe custom key enrollment.
 - [ ] Confirm the actual SSD by-id path and ethernet kernel driver.
 - [ ] Confirm GitHub key fingerprints and bootstrapped root SSH.
-- [ ] Evaluate/build `nixosConfigurations.black` on a NixOS machine.
+- [ ] GitHub Actions `black NixOS build` succeeds (evaluation and system build).
+- [ ] Commit a regenerated `flake.lock` with Disko and Lanzaboote pins; CI currently resolves missing inputs.
 - [ ] Confirm `disko-install` CLI against the locked disko revision.
 - [ ] Perform the initial installation and secure-boot cutover with console access.
