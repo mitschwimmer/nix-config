@@ -16,6 +16,15 @@
   boot.initrd.availableKernelModules = [ "nvme" "ahci" "xhci_pci" "usbhid" ];
   boot.kernelModules = [ "kvm-intel" ];
 
+  nixpkgs.config.allowUnfree = true;
+  services.xserver.videoDrivers = [ "nvidia" ];
+  hardware.nvidia = {
+    modesetting.enable = true;
+    open = true;
+    nvidiaSettings = false;
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
+  };
+
   hardware.enableRedistributableFirmware = true;
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
@@ -47,7 +56,5 @@
     git
   ];
 
-  # The RTX 3060 is deliberately not forced into the first-boot graphics path.
-  # Verify the GPU's driver requirements and enable NVIDIA only when needed.
   system.stateVersion = "26.05";
 }
