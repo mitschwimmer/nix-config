@@ -1,19 +1,19 @@
-name: meameablack NixOS build
+name: meablack NixOS build
 
 on:
   pull_request:
     paths:
       - "flake.nix"
       - "flake.lock"
-      - "meameablack/**"
-      - ".github/workflows/meameablack.yml"
+      - "meablack/**"
+      - ".github/workflows/meablack.yml"
   push:
     branches: [main]
     paths:
       - "flake.nix"
       - "flake.lock"
-      - "meameablack/**"
-      - ".github/workflows/meameablack.yml"
+      - "meablack/**"
+      - ".github/workflows/meablack.yml"
   workflow_dispatch:
 
 permissions:
@@ -33,7 +33,7 @@ jobs:
       # resolve them on the runner. Commit the updated lock file before merging.
       - name: Resolve flake inputs
         run: nix flake lock
-      - name: Evaluate meameablack
-        run: nix eval --raw .#nixosConfigurations.meameablack.config.system.build.toplevel.drvPath
-      - name: Build meameablack system
-        run: nix build --no-link --print-build-logs .#nixosConfigurations.meameablack.config.system.build.toplevel
+      - name: Evaluate meablack
+        run: nix eval --raw .#nixosConfigurations.meablack.config.system.build.toplevel.drvPath
+      - name: Build meablack system
+        run: nix build --no-link --print-build-logs .#nixosConfigurations.meablack.config.system.build.toplevel
