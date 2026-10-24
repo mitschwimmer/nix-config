@@ -54,7 +54,6 @@
     tpm2-tools
     helix
     git
-    python312
     uv
     cmake
     gnumake
