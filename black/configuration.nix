@@ -5,7 +5,7 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
-  networking.hostName = "black";
+  networking.hostName = "meablack";
   networking.useDHCP = lib.mkDefault true;
   networking.firewall.enable = true;
 
@@ -54,7 +54,17 @@
     tpm2-tools
     helix
     git
+    python312
+    uv
+    cmake
+    gnumake
+    gcc
+    pkg-config
+    cudaPackages.cuda_nvcc
   ];
 
+  # Strata uses its own Python/CUDA environment; it is provisioned manually.
+  # Keep CUDA compiler available if the engine needs a source build.
+  hardware.graphics.enable = true;
   system.stateVersion = "26.05";
 }
