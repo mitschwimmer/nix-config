@@ -60,11 +60,11 @@
     gnumake
     gcc
     pkg-config
-    cudaPackages.cuda_nvcc
   ];
 
-  # Strata uses its own Python/CUDA environment; it is provisioned manually.
-  # Keep CUDA compiler available if the engine needs a source build.
+  # Strata's downloaded Linux engine is not Nix-built; enable compatibility
+  # for dynamically linked binaries. Provision its user-level runtime separately.
+  programs.nix-ld.enable = true;
   hardware.graphics.enable = true;
   system.stateVersion = "26.05";
 }
