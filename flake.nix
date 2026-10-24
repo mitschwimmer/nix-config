@@ -61,7 +61,7 @@
     in
     {
       nixosConfigurations = {
-        meablack = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./black/configuration.nix ]; };
+        meablack = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./meablack/configuration.nix ]; };
         mearock = makeWorkstation "mearock";
         meaxps = makeWorkstation "meaxps";
         meatab = makeWorkstation "meatab";
