@@ -1,4 +1,4 @@
-# black: installation and recovery
+# meameablack: installation and recovery
 
 Draft plan: x86_64, UEFI, Intel CPU, NVIDIA RTX 3060 12 GB, single SSD, DHCP,
 encrypted ext4 root, zram, and SSH. **This is not a one-command unattended
@@ -16,11 +16,36 @@ mechanism, NIC driver, and actual target disk must be checked locally.
 - TPM PCR 7 binds to Secure Boot policy, but it does not by itself attest the
   entire operating system. TPM-only automatic unlock is not equivalent to a PIN.
 - A Secure Boot firmware update/key change may require LUKS recovery.
-- NVIDIA RTX 3060 proprietary-driver package is enabled at first boot using
+- NVIDIA RTX 3060 driver is enabled at first boot using
   the stable NVIDIA driver and its supported open kernel module. This requires
   unfree package evaluation and a working kernel/driver combination.
 - No machine-specific NIC or storage driver information is available yet.
 - The placeholder disk device in `disko.nix` must never be used literally.
+
+## Strata inference runtime
+
+Strata is provisioned after the first boot, **not downloaded or executed by
+NixOS activation or as root**. The host includes the NVIDIA driver and
+`programs.nix-ld` for running third-party dynamically linked Linux binaries.
+
+1. Log in as a dedicated unprivileged user (create one with persistent home
+   directory and SSH access before provisioning).
+2. Verify the GPU and driver: `nvidia-smi`. Upstream Strata currently
+   recommends NVIDIA driver 580 or newer.
+3. Review the upstream installation process and select a particular release:
+   https://github.com/Niko1221/Strata/blob/main/docs/INSTALL.md
+4. Install the Strata Terminal under that user and run `strata launch`
+   interactively to select a model and configure network binding. Avoid running
+   `curl | sh` without reviewing the script and verifying the release.
+5. The terminal/runtime is managed upstream, not reproducibly by this NixOS
+   flake. If NixOS runtime compatibility fails, inspect missing dynamic library
+   dependencies rather than creating broad global library paths.
+6. Keep Strata on loopback initially; set firewall/API authentication
+   deliberately before allowing LAN access. Model weights require substantial
+   disk capacity (tens of GB).
+
+This PR intentionally does **not** install an automatically updating binary,
+publish an inference API, or create an unverified systemd service.
 
 ## Preflight
 
@@ -49,7 +74,7 @@ On the installer, clone the repository and review the chosen disk ID:
 ```sh
 git clone https://github.com/mitschwimmer/nix-config
 cd nix-config
-sudo disko-install --flake .#black --disk main /dev/disk/by-id/ACTUAL-DISK-ID
+sudo disko-install --flake .#meablack --disk main /dev/disk/by-id/ACTUAL-DISK-ID
 ```
 
 Disko formatting **irreversibly erases** the target disk. Follow interactive
@@ -105,7 +130,7 @@ physical recovery access, and verified backups:
 1. Inspect `bootctl status` and firmware Secure Boot status.
 2. Generate signing keys using `sudo sbctl create-keys`. Back up the private
    keys from `/var/lib/sbctl` securely **outside this disk**, never in Git.
-3. Add `./secure-boot.nix` to the `black` imports and rebuild. This requires
+3. Add `./secure-boot.nix` to the `meablack` imports and rebuild. This requires
    the `lanzaboote` flake input/module already present in `flake.nix`.
 4. Confirm signed boot artifacts and follow firmware-specific instructions
    to enter Setup Mode. Enroll your keys with `sbctl enroll-keys`; depending
@@ -136,7 +161,7 @@ re-enroll TPM2. Do not erase old slots until recovery is verified.
 - [ ] Confirm TPM2 is available, firmware permits safe custom key enrollment.
 - [ ] Confirm the actual SSD by-id path and ethernet kernel driver.
 - [ ] Confirm GitHub key fingerprints and bootstrapped root SSH.
-- [ ] GitHub Actions `black NixOS build` succeeds (evaluation and system build).
+- [ ] GitHub Actions `meablack NixOS build` succeeds (evaluation and system build).
 - [ ] Commit a regenerated `flake.lock` with Disko and Lanzaboote pins; CI currently resolves missing inputs.
 - [ ] Confirm `disko-install` CLI against the locked disko revision.
 - [ ] Perform the initial installation and secure-boot cutover with console access.

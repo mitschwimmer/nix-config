@@ -5,7 +5,7 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
-  networking.hostName = "black";
+  networking.hostName = "meablack";
   networking.useDHCP = lib.mkDefault true;
   networking.firewall.enable = true;
 
@@ -54,7 +54,16 @@
     tpm2-tools
     helix
     git
+    uv
+    cmake
+    gnumake
+    gcc
+    pkg-config
   ];
 
+  # Strata's downloaded Linux engine is not Nix-built; enable compatibility
+  # for dynamically linked binaries. Provision its user-level runtime separately.
+  programs.nix-ld.enable = true;
+  hardware.graphics.enable = true;
   system.stateVersion = "26.05";
 }
