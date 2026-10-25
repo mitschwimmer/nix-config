@@ -77,6 +77,11 @@
 
       nixosConfigurations = {
         meablack = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./meablack/configuration.nix ]; };
+        # Use after generating /var/lib/sbctl keys on the installed host.
+        # The offline installer continues using the unsigned bootstrap profile.
+        meablack-secure = self.nixosConfigurations.meablack.extendModules {
+          modules = [ ./meablack/secure-boot.nix ];
+        };
         mearock = makeWorkstation "mearock";
         meaxps = makeWorkstation "meaxps";
         meatab = makeWorkstation "meatab";

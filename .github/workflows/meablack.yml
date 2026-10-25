@@ -38,6 +38,8 @@ jobs:
         run: nix eval --no-update-lock-file --raw .#nixosConfigurations.meablack.config.system.build.toplevel.drvPath
       - name: Build meablack system
         run: nix build --no-update-lock-file --no-link --print-build-logs .#nixosConfigurations.meablack.config.system.build.toplevel
+      - name: Build meablack Secure Boot system
+        run: nix build --no-update-lock-file --no-link --print-build-logs .#nixosConfigurations.meablack-secure.config.system.build.toplevel
       - name: Build offline installer with a disposable CI passphrase
         env:
           MEABLACK_RECOVERY_PASSPHRASE_FILE: ${{ runner.temp }}/meablack-ci-passphrase
