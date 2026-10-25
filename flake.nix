@@ -12,6 +12,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       nixpkgs-unstable,
       home-manager,
@@ -60,6 +61,20 @@
 
     in
     {
+      packages.${system}.meablack-installer =
+        (lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            targetSystem = self.nixosConfigurations.meablack;
+            recoveryPassphraseFile =
+              let file = builtins.getEnv "MEABLACK_RECOVERY_PASSPHRASE_FILE";
+              in if file == "" then
+                throw "Set MEABLACK_RECOVERY_PASSPHRASE_FILE and build with --impure; see meablack/README.md"
+              else builtins.path { path = file; name = "meablack-recovery-passphrase"; };
+          };
+          modules = [ ./meablack/installer.nix ];
+        }).config.system.build.isoImage;
+
       nixosConfigurations = {
         meablack = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./meablack/configuration.nix ]; };
         mearock = makeWorkstation "mearock";

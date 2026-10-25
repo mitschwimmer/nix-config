@@ -43,9 +43,9 @@
     };
   };
 
-  # Populated from https://github.com/mitschwimmer.keys during provisioning.
-  # Never fetch mutable SSH keys automatically during boot.
+  # Reviewed public keys are bundled, so installation needs no network access.
   services.openssh.settings.AuthorizedKeysFile = "/etc/ssh/authorized_keys.d/%u";
+  users.users.root.openssh.authorizedKeys.keyFiles = [ ./authorized_keys ];
 
   environment.systemPackages = with pkgs; [
     cryptsetup

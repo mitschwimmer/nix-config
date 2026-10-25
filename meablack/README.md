@@ -1,9 +1,102 @@
-# meameablack: installation and recovery
+# meablack: installation and recovery
 
 Draft plan: x86_64, UEFI, Intel CPU, NVIDIA RTX 3060 12 GB, single SSD, DHCP,
-encrypted ext4 root, zram, and SSH. **This is not a one-command unattended
-installation.** The machine model, TPM2 availability, firmware enrollment
-mechanism, NIC driver, and actual target disk must be checked locally.
+encrypted ext4 root, zram, and SSH. The custom USB installer automatically
+erases the sole internal disk and installs a prebuilt system without network
+access or prompts. Strata comes later, after placing the machine on the LAN.
+
+## Build the unattended USB
+
+On an internet-connected x86_64 Linux machine with Nix, flakes, OpenSSL and
+OpenSSH installed:
+
+```sh
+git clone https://github.com/mitschwimmer/nix-config
+cd nix-config
+export MEABLACK_RECOVERY_PASSPHRASE_FILE="$HOME/meablack-recovery-passphrase"
+bash meablack/build-installer.sh
+```
+
+The build helper creates a random 256-bit passphrase if the specified file does
+not exist, then reuses that file for subsequent builds. Store it outside this
+checkout and back it up. The helper displays the fingerprints of the bundled
+public SSH keys; review `meablack/authorized_keys` before building. They were
+retrieved from `https://github.com/mitschwimmer.keys` on 2026-10-25:
+
+```text
+RSA     SHA256:sbdpCKGbLvgwUa9sLxjwlkC00LT11UczbxdyfAapves
+ED25519 SHA256:CnvyuZXJ7f4QgsCqFRotdWBJmh7zJiHrTKhkD89Ut6k
+```
+
+The image includes the target system closure, NVIDIA driver, firmware, a
+prebuilt Disko script, installation tools and public SSH keys. No GitHub access,
+flake evaluation, package downloads or compilation happens during installation.
+The installer disables DHCP, Wi-Fi, NetworkManager, SSH and binary caches.
+The installed system retains DHCP and SSH for its eventual LAN connection.
+
+**The ISO, USB and build machine's Nix store contain the recovery passphrase in
+plaintext.** Anyone possessing the image can unlock the resulting disk. Do not
+publish the image or build it on a shared machine. The helper disables remote
+builders. Building the ordinary
+`meablack` system does not include the passphrase. Keep a separate copy of the
+passphrase; do not depend on the USB as its only backup.
+
+Write the ISO to the **whole USB device**, replacing the example path:
+
+```sh
+sudo dd if=result/iso/meablack-unattended.iso of=/dev/disk/by-id/USB-DEVICE bs=4M conv=fsync status=progress
+```
+
+This also erases the selected USB. The installer supports booting the directly
+written ISO; Ventoy, copied ISO files, PXE and booting the ISO from the target
+disk are not supported.
+
+## Unattended installation
+
+Boot the USB in UEFI mode. Disable Secure Boot in firmware if necessary to boot
+this unsigned installer. There is a one-second boot menu and **no installation
+confirmation or disk-specific allowlist**. Every boot repeats the installation.
+
+The boot service:
+
+1. Requires exactly one writable, non-removable, non-USB whole disk and checks
+   that it is not an ancestor of the live ISO device. It stops if discovery is
+   ambiguous or the live medium cannot be identified.
+2. Erases that disk and creates a 1 GiB EFI partition and LUKS2-encrypted ext4
+   root. The bundled random passphrase initializes LUKS without prompts.
+3. Installs the prebuilt system with systemd-boot and your pinned SSH keys.
+4. Attempts TPM2 enrollment against the **current PCR 7 policy**, retaining the
+   passphrase slot. With supported TPM2 hardware this permits automatic disk
+   unlock. Without it, enter the saved passphrase at the next disk boot.
+5. Flushes and unmounts the disk, closes LUKS and powers off on success.
+
+**Remove the USB before powering on again.** Leaving it attached and booting it
+again will erase and reinstall the disk again. This USB will also erase another
+computer's sole eligible internal disk if booted there.
+
+The system can boot before being connected to the LAN. Once connected, use
+`ssh root@<DHCP-address>` with one of the bundled keys. Password SSH is disabled.
+No Strata runtime, model weights or API service are installed.
+
+On failure the installer stays powered on, without an automatic retry or
+reboot. At the live console inspect:
+
+```sh
+systemctl status install-meablack
+journalctl -b -u install-meablack
+lsblk -f
+lspci -nnk
+```
+
+Fix the configuration, rebuild/rewrite the USB, and boot it again for a clean
+retry. Logs live in the installer session and are lost on poweroff. A successful
+install should still be verified with an actual disk boot: an installation
+command succeeding does not prove hardware compatibility.
+
+To recover the passphrase from the USB on another Linux machine, mount its ISO
+filesystem read-only and read `/meablack-recovery-passphrase` on that mount. It
+is a 64-character hex string with no trailing newline and can be typed at the
+LUKS prompt. Keep that medium disconnected during ordinary operation.
 
 ## Important limitations
 
@@ -11,8 +104,9 @@ mechanism, NIC driver, and actual target disk must be checked locally.
 - The first installation deliberately uses **systemd-boot**, not Lanzaboote:
   switching firmware keys remotely without physical recovery access risks an
   unbootable machine.
-- LUKS is initialized with a passphrase. The TPM2 token is enrolled separately
-  **after** the system boots; the recovery secret must be retained offline.
+- The unattended installer initializes LUKS with its bundled random passphrase
+  and attempts TPM2 enrollment. Preserve the passphrase offline. Re-enroll TPM2
+  after any later Secure Boot policy change.
 - TPM PCR 7 binds to Secure Boot policy, but it does not by itself attest the
   entire operating system. TPM-only automatic unlock is not equivalent to a PIN.
 - A Secure Boot firmware update/key change may require LUKS recovery.
@@ -20,7 +114,9 @@ mechanism, NIC driver, and actual target disk must be checked locally.
   the stable NVIDIA driver and its supported open kernel module. This requires
   unfree package evaluation and a working kernel/driver combination.
 - No machine-specific NIC or storage driver information is available yet.
-- The placeholder disk device in `disko.nix` must never be used literally.
+- The placeholder disk device in `disko.nix` is used only for the ordinary host
+  configuration. The offline formatting script overrides it with a runtime
+  alias to the detected disk; the installed system uses stable partition labels.
 
 ## Strata inference runtime
 
@@ -47,59 +143,20 @@ NixOS activation or as root**. The host includes the NVIDIA driver and
 This PR intentionally does **not** install an automatically updating binary,
 publish an inference API, or create an unverified systemd service.
 
-## Preflight
+## Hardware checks and manual installation
 
-Boot a compatible NixOS installer via UEFI with physical console access.
-Temporarily disable Secure Boot *only if the installer is not trusted by the
-current firmware*. Re-enable Secure Boot only after the signed-boot migration.
+The automated path assumes x86_64 UEFI, Intel CPU, NVIDIA RTX 3060, a single
+internal disk, and storage supported by the configured initrd modules. Inspect
+`lspci -nnk` from the live console if a driver is missing and include it before
+rebuilding. The installer does not generate an unknown hardware configuration
+or fetch drivers from the network.
 
-Inspect:
+For manual installation from a networked installer, use the pinned Disko
+installer and explicitly supply the actual whole-disk by-id path. The normal
+host configuration retains an interactive LUKS prompt. The offline USB uses
+its prebuilt formatting script instead of evaluating `disko-install` at boot.
 
-```sh
-test -d /sys/firmware/efi
-lsblk -o NAME,SIZE,MODEL,SERIAL,TRAN,PATH
-ls -l /dev/disk/by-id/
-lspci -nnk
-bootctl status
-systemd-cryptenroll --tpm2-device=list
-```
-
-Confirm which **entire disk** may be erased. Have local keyboard/display or
-out-of-band management access before proceeding. Back up all existing data.
-
-## Installation
-
-On the installer, clone the repository and review the chosen disk ID:
-
-```sh
-git clone https://github.com/mitschwimmer/nix-config
-cd nix-config
-sudo disko-install --flake .#meablack --disk main /dev/disk/by-id/ACTUAL-DISK-ID
-```
-
-Disko formatting **irreversibly erases** the target disk. Follow interactive
-LUKS passphrase prompts. `disko-install` is supplied by the disko installer
-package, not necessarily the default NixOS ISO. Use a custom ISO with it or
-`nix run github:nix-community/disko#disko-install -- ...` and check supported
-CLI flags against the pinned disko revision before running.
-
-**Before the first reboot**, install authorized public keys in the target root.
-This is an explicit provisioning step rather than an unpinned network fetch
-embedded in Nix evaluation. Review the key fingerprints out of band.
-
-```sh
-sudo install -d -m 0755 /mnt/etc/ssh/authorized_keys.d
-curl -fsSL https://github.com/mitschwimmer.keys | sudo tee /mnt/etc/ssh/authorized_keys.d/root
-sudo chmod 0644 /mnt/etc/ssh/authorized_keys.d/root
-sudo test -s /mnt/etc/ssh/authorized_keys.d/root
-```
-
-Check the actual root mount location after disko-install; if it unmounts
-`/mnt`, mount the new root again before writing keys. Verify the keys and
-test SSH access before relying on remote administration. Never assume the GitHub
-account has an active key.
-
-## TPM enrollment (after first successful boot)
+## Recovery and TPM enrollment (after first successful boot)
 
 Identify the real LUKS partition, e.g. with `lsblk -f`, rather than copying
 a device name from this document. Verify a working LUKS passphrase and a
@@ -110,11 +167,12 @@ sudo systemd-cryptenroll --recovery-key /dev/disk/by-id/DISK-PARTITION
 ```
 
 Record the recovery key OFFLINE and test it before removing any other key
-slots. Only after the machine's final Secure Boot policy is established, enroll
-the TPM2 binding:
+slots. The USB already attempted enrollment for the initial policy. After establishing
+the final Secure Boot policy, replace that TPM2 binding (this retains the
+passphrase and recovery slots):
 
 ```sh
-sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 /dev/disk/by-id/DISK-PARTITION
+sudo systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 --wipe-slot=tpm2 /dev/disk/by-id/DISK-PARTITION
 ```
 
 The `tpm2-device=auto` crypttab option is already configured declaratively.
@@ -153,15 +211,30 @@ known-good firmware key state or temporarily disable verification through
 authorized firmware controls before recovering. Preserve the signed boot
 keys, LUKS header backup, recovery key, and a bootable installer offline.
 
+The unattended USB defaults to **erasing**, including during recovery. Use a
+separate ordinary NixOS installer for repairs, or edit the unattended USB's boot
+entry to append `systemd.mask=install-meablack.service` before booting it.
+
 After firmware/DB updates affecting PCR 7, unlock with the recovery key and
 re-enroll TPM2. Do not erase old slots until recovery is verified.
 
-## Validation before merge
+## Validation
 
-- [ ] Confirm TPM2 is available, firmware permits safe custom key enrollment.
-- [ ] Confirm the actual SSD by-id path and ethernet kernel driver.
-- [ ] Confirm GitHub key fingerprints and bootstrapped root SSH.
-- [ ] GitHub Actions `meablack NixOS build` succeeds (evaluation and system build).
-- [ ] Commit a regenerated `flake.lock` with Disko and Lanzaboote pins; CI currently resolves missing inputs.
-- [ ] Confirm `disko-install` CLI against the locked disko revision.
-- [ ] Perform the initial installation and secure-boot cutover with console access.
+`python3 meablack/test-select-disk.py` exercises disk discovery with mocked
+commands: SATA/NVMe/virtual disks, USB exclusion, read-only/removable disks,
+ambiguous targets, unknown live media, and installer-ancestor rejection. No test
+accesses or formats real devices. CI checks Bash/ShellCheck, evaluates and builds
+the host with the committed lock, and builds the ISO with a disposable random
+CI passphrase. CI does not publish that image.
+
+Before using the installer on hardware, boot a locally built ISO in an isolated
+UEFI VM with **no virtual NIC**, one blank SATA/NVMe disk and the ISO as CD-ROM.
+It should install and power off. Remove the ISO, boot the disk, and verify LUKS
+unlock using the saved passphrase and a running NixOS system. With a virtual
+TPM, verify automatic unlock too. A second boot of the ISO must reinstall rather
+than depend on state left by the first run. No-network installation and disk
+boot are separate checks; an ISO build alone does not cover either.
+
+Physical validation still includes the actual storage/NIC drivers, TPM2 and
+firmware-specific Secure Boot enrollment. Initial installation deliberately
+leaves firmware Secure Boot keys unchanged.
