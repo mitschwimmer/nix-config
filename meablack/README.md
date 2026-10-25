@@ -36,7 +36,8 @@ The installed system retains DHCP and SSH for its eventual LAN connection.
 
 **The ISO, USB and build machine's Nix store contain the recovery passphrase in
 plaintext.** Anyone possessing the image can unlock the resulting disk. Do not
-publish the image or build it on a shared/remote builder. Building the ordinary
+publish the image or build it on a shared machine. The helper disables remote
+builders. Building the ordinary
 `meablack` system does not include the passphrase. Keep a separate copy of the
 passphrase; do not depend on the USB as its only backup.
 
@@ -209,6 +210,10 @@ or configuration. If firmware Secure Boot rejects the bootloader, restore the
 known-good firmware key state or temporarily disable verification through
 authorized firmware controls before recovering. Preserve the signed boot
 keys, LUKS header backup, recovery key, and a bootable installer offline.
+
+The unattended USB defaults to **erasing**, including during recovery. Use a
+separate ordinary NixOS installer for repairs, or edit the unattended USB's boot
+entry to append `systemd.mask=install-meablack.service` before booting it.
 
 After firmware/DB updates affecting PCR 7, unlock with the recovery key and
 re-enroll TPM2. Do not erase old slots until recovery is verified.
