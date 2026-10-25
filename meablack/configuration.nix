@@ -7,7 +7,11 @@
 
   networking.hostName = "meablack";
   networking.useDHCP = lib.mkDefault true;
-  networking.firewall.enable = true;
+
+networking.firewall = {
+  enable = true;
+  allowedTCPPorts = [ 8080 ];
+};
 
   # First boot uses systemd-boot. Secure Boot is a separate, staged migration.
   boot.loader.systemd-boot.enable = true;
