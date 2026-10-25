@@ -18,7 +18,7 @@ let
       MEABLACK_SYSTEM = targetSystem.config.system.build.toplevel;
       MEABLACK_DISKO_SCRIPT = partitioning.config.system.build.diskoScript;
       MEABLACK_RECOVERY_FILE = recoveryPassphraseFile;
-      MEABLACK_AUTHORIZED_KEYS = ./authorized_keys;
+      MEABLACK_AUTHORIZED_KEYS = "${./authorized_keys}";
     };
     text = builtins.readFile ./install.sh;
   };
