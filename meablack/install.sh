@@ -2,6 +2,7 @@
 # This script is deliberately destructive and has no confirmation prompt.
 test -d /sys/firmware/efi || { echo "UEFI boot is required." >&2; exit 1; }
 test -s "$MEABLACK_RECOVERY_FILE"
+test -s "$MEABLACK_AUTHORIZED_KEYS"
 test -x "$MEABLACK_DISKO_SCRIPT"
 test -x "$MEABLACK_SYSTEM/bin/switch-to-configuration"
 disk=$(select-meablack-disk)
