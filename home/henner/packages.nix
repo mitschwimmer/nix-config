@@ -55,5 +55,6 @@
       enpass
       libreoffice
       gthumb
+      godot
     ]);
 }
