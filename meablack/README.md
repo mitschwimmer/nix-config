@@ -188,8 +188,11 @@ physical recovery access, and verified backups:
 1. Inspect `bootctl status` and firmware Secure Boot status.
 2. Generate signing keys using `sudo sbctl create-keys`. Back up the private
    keys from `/var/lib/sbctl` securely **outside this disk**, never in Git.
-3. Add `./secure-boot.nix` to the `meablack` imports and rebuild. This requires
-   the `lanzaboote` flake input/module already present in `flake.nix`.
+3. Rebuild the installed host using the `meablack-secure` configuration:
+   `nixos-rebuild switch --flake github:mitschwimmer/nix-config#meablack-secure`.
+   This imports `secure-boot.nix` and signs boot artifacts with `/var/lib/sbctl`.
+   Continue using `#meablack-secure` for future rebuilds. The `#meablack` profile
+   remains the unsigned bootstrap target used by the offline installer.
 4. Confirm signed boot artifacts and follow firmware-specific instructions
    to enter Setup Mode. Enroll your keys with `sbctl enroll-keys`; depending
    on hardware option ROMs, Microsoft/firmware keys may need retention.
