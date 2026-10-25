@@ -47,6 +47,13 @@
   services.openssh.settings.AuthorizedKeysFile = "/etc/ssh/authorized_keys.d/%u";
   users.users.root.openssh.authorizedKeys.keyFiles = [ ./authorized_keys ];
 
+  # Run the user-managed inference runtime without administrator privileges.
+  users.users.strata = {
+    isNormalUser = true;
+    description = "Strata inference";
+    extraGroups = [ "video" "render" ];
+  };
+
   environment.systemPackages = with pkgs; [
     cryptsetup
     sbctl
