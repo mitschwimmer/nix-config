@@ -50,6 +50,7 @@
       eza
       fd
       ripgrep
+      libqalculate
     ])
     ++ (with pkgs-unstable; [
       enpass
