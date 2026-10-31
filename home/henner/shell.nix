@@ -32,6 +32,14 @@
     enableBashIntegration = true;
     enableFishIntegration = false;
     presets = [ "plain-text-symbols" ];
+    settings = {
+    nix_shell = {
+      heuristic = true;
+      symbol = "nix ";
+      format = "[$symbol]($style)";
+      style = "bold blue";
+    };
+  };
   };
 
   programs.fzf = {
