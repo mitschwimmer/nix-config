@@ -30,12 +30,12 @@
   programs.starship = {
     enable = true;
     enableBashIntegration = true;
-    enableFishIntegration = false;
     presets = [ "plain-text-symbols" ];
     settings = {
-    nix_shell = {
-      heuristic = true;
-      symbol = "nix ";
+    shlvl = {
+      disabled = false;
+      threshold = 3;
+      symbol = "⧉ ";
       format = "[$symbol]($style)";
       style = "bold blue";
     };
