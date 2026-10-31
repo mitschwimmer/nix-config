@@ -29,7 +29,6 @@
       easyeffects
       prismlauncher
       papers
-      ghostty
       calibre
       teams-for-linux
       gimp
@@ -54,6 +53,7 @@
     ])
     ++ (with pkgs-unstable; [
       enpass
+      ghostty
       libreoffice
       gthumb
       godot
