@@ -24,6 +24,8 @@
     ];
     initExtra = ''
       shopt -s checkwinsize
+      # Share commands across interactive shells, including nix develop/shell.
+      PROMPT_COMMAND="history -a; history -n''${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
     '';
   };
 
