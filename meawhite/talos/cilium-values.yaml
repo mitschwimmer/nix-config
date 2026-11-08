@@ -1,0 +1,44 @@
+# Initial Cilium CNI bootstrap for Talos v1.14.5 / Kubernetes v1.37.1.
+# Derived from digital-garden/cluster/bootstrap/cilium/values.yaml.
+# Gateway API, Envoy and other app-level settings are intentionally excluded.
+# Cilium 1.20.4's e2e-tested Kubernetes range stops at 1.36.
+ipam:
+  mode: kubernetes
+
+kubeProxyReplacement: true
+
+# Local Talos KubePrism Kubernetes API endpoint.
+k8sServiceHost: localhost
+k8sServicePort: 7445
+
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
+
+# Required for Talos's Kubernetes DNS forwarding to the host resolver.
+bpf:
+  hostLegacyRouting: true
+
+# Talos workloads cannot load kernel modules. Do not give SYS_MODULE.
+securityContext:
+  capabilities:
+    ciliumAgent:
+      - CHOWN
+      - KILL
+      - NET_ADMIN
+      - NET_RAW
+      - IPC_LOCK
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    cleanCiliumState:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - SYS_RESOURCE
+
+operator:
+  replicas: 1
