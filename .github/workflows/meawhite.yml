@@ -31,9 +31,9 @@ jobs:
             experimental-features = nix-command flakes
       - name: Validate installer scripts and disk selection
         run: |
-          bash -n meawhite/build-installer.sh meawhite/install.sh
-          shellcheck -s bash meawhite/build-installer.sh meawhite/install.sh
-          python3 meawhite/test-check-disks.py
+          bash -n meawhite/build-installer.sh meawhite/install.sh meawhite/check-disks.sh meawhite/test-check-disks.sh
+          shellcheck -s bash meawhite/build-installer.sh meawhite/install.sh meawhite/check-disks.sh meawhite/test-check-disks.sh
+          bash meawhite/test-check-disks.sh
       - name: Evaluate meawhite
         run: nix eval --no-update-lock-file --raw .#nixosConfigurations.meawhite.config.system.build.toplevel.drvPath
       - name: Build meawhite system

@@ -139,8 +139,8 @@ Preserve the passphrase, LUKS header backups and Secure Boot signing keys offlin
 
 ## Validation
 
-`python3 meawhite/test-check-disks.py` checks disk safety decisions with synthetic
-inventories; it never accesses or formats a block device. CI checks Bash and
+`bash meawhite/test-check-disks.sh` checks the Bash preflight with mocked disk
+commands; it never accesses or formats a block device. CI checks Bash and
 ShellCheck, builds both host profiles and builds an offline ISO using a disposable
 passphrase without publishing it.
 

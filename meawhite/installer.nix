@@ -23,8 +23,8 @@ let
   };
   checkDisks = pkgs.writeShellApplication {
     name = "check-meawhite-disks";
-    runtimeInputs = with pkgs; [ python3 systemd util-linux ];
-    text = "exec python3 ${./check-disks.py}";
+    runtimeInputs = with pkgs; [ coreutils systemd util-linux jq gnugrep ];
+    text = builtins.readFile ./check-disks.sh;
   };
 in
 {
