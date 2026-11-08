@@ -75,7 +75,25 @@
           modules = [ ./meablack/installer.nix ];
         }).config.system.build.isoImage;
 
+      packages.${system}.meawhite-installer =
+        (lib.nixosSystem {
+          inherit system;
+          specialArgs = {
+            targetSystem = self.nixosConfigurations.meawhite;
+            recoveryPassphraseFile =
+              let file = builtins.getEnv "MEAWHITE_RECOVERY_PASSPHRASE_FILE";
+              in if file == "" then
+                throw "Set MEAWHITE_RECOVERY_PASSPHRASE_FILE and build with --impure; see meawhite/README.md"
+              else builtins.path { path = file; name = "meawhite-recovery-passphrase"; };
+          };
+          modules = [ ./meawhite/installer.nix ];
+        }).config.system.build.isoImage;
+
       nixosConfigurations = {
+        meawhite = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./meawhite/configuration.nix ]; };
+        meawhite-secure = self.nixosConfigurations.meawhite.extendModules {
+          modules = [ ./meawhite/secure-boot.nix ];
+        };
         meablack = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./meablack/configuration.nix ]; };
         # Use after generating /var/lib/sbctl keys on the installed host.
         # The offline installer continues using the unsigned bootstrap profile.

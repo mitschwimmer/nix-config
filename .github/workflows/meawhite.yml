@@ -1,0 +1,47 @@
+name: meawhite NixOS build
+
+on:
+  pull_request:
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "meawhite/**"
+      - ".github/workflows/meawhite.yml"
+  push:
+    branches: [main]
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "meawhite/**"
+      - ".github/workflows/meawhite.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Validate installer scripts and disk selection
+        run: |
+          bash -n meawhite/build-installer.sh meawhite/install.sh
+          shellcheck -s bash meawhite/build-installer.sh meawhite/install.sh
+          python3 meawhite/test-check-disks.py
+      - name: Evaluate meawhite
+        run: nix eval --no-update-lock-file --raw .#nixosConfigurations.meawhite.config.system.build.toplevel.drvPath
+      - name: Build meawhite system
+        run: nix build --no-update-lock-file --no-link --print-build-logs .#nixosConfigurations.meawhite.config.system.build.toplevel
+      - name: Build meawhite Secure Boot system
+        run: nix build --no-update-lock-file --no-link --print-build-logs .#nixosConfigurations.meawhite-secure.config.system.build.toplevel
+      - name: Build offline installer with a disposable CI passphrase
+        env:
+          MEAWHITE_RECOVERY_PASSPHRASE_FILE: ${{ runner.temp }}/meawhite-ci-passphrase
+        run: bash meawhite/build-installer.sh --print-build-logs
+      # Do not publish this image: it contains a passphrase known to the CI runner.
