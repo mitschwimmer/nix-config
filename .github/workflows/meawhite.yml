@@ -48,7 +48,7 @@ jobs:
             umask 077
             mkdir -p "$work/generated"
             bash meawhite/talos/render-cilium.sh "$work/cilium-bootstrap.patch.yaml"
-            talosctl gen config meawhite https://192.168.127.10:6443 \
+            talosctl gen config meawhite https://192.0.2.10:6443 \
               --talos-version v1.14.5 \
               --install-disk /dev/vda \
               --config-patch-control-plane @meawhite/talos/cilium.patch.yaml \
