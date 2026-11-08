@@ -49,26 +49,9 @@ in
     virtualisation.libvirt = {
       enable = true;
       connections."qemu:///system" = {
-        networks = [
-          {
-            definition = nixvirt.lib.network.writeXML {
-              name = "talos";
-              uuid = "699423c0-897c-4b93-b923-49e4a22da7ed";
-              forward.mode = "nat";
-              bridge.name = "virbr-talos";
-              ip = {
-                address = "192.168.127.1";
-                netmask = "255.255.255.0";
-                dhcp = {
-                  range = { start = "192.168.127.10"; end = "192.168.127.99"; };
-                  host = [ { inherit mac; name = "talos"; ip = "192.168.127.10"; } ];
-                };
-              };
-            };
-            active = true;
-            restart = false;
-          }
-        ];
+        # The VM uses the host LAN bridge; do not retain a private NAT network.
+        # Shut down the running Talos guest before first activating this change.
+        networks = [ ];
 
         pools = [
           {
@@ -126,10 +109,12 @@ in
                     readonly = true;
                   }
                 ];
+                # Reuse the existing MAC for the VM's sole LAN NIC.
+                # Requires the host's br0 bridge and a guest restart to take effect.
                 interface = [
                   {
-                    type = "network";
-                    source.network = "talos";
+                    type = "bridge";
+                    source.bridge = "br0";
                     model.type = "virtio";
                     mac.address = mac;
                   }

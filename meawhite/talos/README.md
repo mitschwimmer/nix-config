@@ -1,7 +1,7 @@
 # Talos on meawhite (declarative KVM)
 
 The NixOS module [../talos-vm.nix](../talos-vm.nix) declares **one** KVM
-VM, its private libvirt NAT network and two persistent qcow2 volumes via
+VM, one NIC on the host LAN bridge and two persistent qcow2 volumes via
 [NixVirt](https://github.com/AshleyYakeley/NixVirt). NixOS owns the
 hypervisor and disk files; Talos owns its node OS; Kubernetes/Argo CD own
 cluster workloads. No Incus or OpenTofu is involved.
@@ -16,25 +16,72 @@ cluster workloads. No Incus or OpenTofu is involved.
   refuse to run if it is unavailable. These are *virtual* disks, not
   physical disks passed to the guest. Ensure actual host free space
   before writing to them.
-- Libvirt private NAT network `talos`: gateway `192.168.127.1`,
-  reserved guest address `192.168.127.10`. It does not alter the host's
-  DHCP/uplink or expose the Talos API to the physical LAN. Initial
-  management runs on meawhite; a LAN bridge or reviewed forwarding is
-  a separate network change.
+- One virtio NIC using host bridge `br0` on the `192.168.1.0/24`
+  LAN, with MAC `52:54:00:7a:10:01`. The LAN's DHCP server assigns
+  the guest address. Once the router sees this MAC and assigns a lease,
+  make that lease permanent in the router. Do not assume any address
+  before the first LAN boot.
+  Talos API (50000) and Kubernetes API (6443) will become LAN-reachable:
+  restrict LAN access as needed and do not forward them on the router.
+  The former `talos` libvirt NAT network is removed on activation.
 - Legacy BIOS (q35), not Secure Boot. No GPU passthrough, extra Talos
   extensions, or VM memory hotplug.
 - The NixVirt-managed `qemu:///system` domain/network/pool lists are
   **authoritative**: NixVirt can undefine libvirt objects omitted from
   these lists. Do not use this connection for unrelated VMs.
-- VM starts **disabled**: `meawhite.talos.start = false`. The false default leaves a currently running VM alone on later rebuilds. Only enable
-  startup after the installer ISO and disk state have been checked.
-  NixVirt is configured not to restart a running domain on NixOS
-  rebuild, even if the persistent domain XML changes. Schedule a
-  controlled guest reboot to apply those changes.
+- For the installed guest, `meawhite.talos.start = true` and
+  `meawhite.talos.installerIso = null`. NixVirt uses `restart = false`
+  and does not power-cycle an already running domain on rebuild.
+  **Shut the VM down gracefully before the first activation of this
+  network change** so NixVirt can replace its NIC and remove the old
+  NAT network without disconnecting a running guest.
 - The qcow2 volumes are created only if absent; ordinary NixOS
   rebuilds do not reformat or replace them. Removing a managed storage
   pool definition does *not* delete its backing files, but manually
   deleting a volume is destructive. Keep tested off-host backups.
+
+## Migrate the existing Talos cluster from NAT to LAN
+
+The host bridge `br0` is already tested and persistent. This change
+replaces the guest's **only** NIC (`52:54:00:7a:10:01`) with a bridged
+NIC using the same MAC. There is no second NIC and no libvirt NAT
+network. VM disks and Talos credentials are unchanged.
+
+No user workloads are deployed yet, so an interruption to the
+single-node Kubernetes cluster is acceptable. **Do not re-bootstrap etcd
+or regenerate Talos secrets as a routine part of the migration.**
+
+1. Before the switch, preserve the current private Talos configuration
+   and kubeconfig from `meanovo`. With the existing SSH tunnels running,
+   confirm that the node is ready, and shut Talos down cleanly with
+   authenticated `talosctl shutdown` (using the old NAT endpoint).
+   Confirm `virsh -c qemu:///system domstate talos` is `shut off`.
+2. Build and activate the NixOS configuration from this change on
+   `meawhite`. With the guest shut down, NixVirt can redefine the
+   persistent domain to use `br0` and remove the previous managed NAT
+   network. `meawhite.talos.start = true` requests guest startup.
+   Review `virsh -c qemu:///system dumpxml talos --inactive` to verify
+   exactly one NIC, type `bridge`, source `br0`, and the original MAC.
+3. Allow the VM's LAN NIC to obtain its initial address via DHCP.
+   Find the new lease in the router using MAC `52:54:00:7a:10:01`,
+   then mark the router's assigned address as fixed. Talos uses DHCP
+   when no static network configuration has been supplied; inspect
+   the guest console if it does not appear. Test the Talos API from
+   `meanovo` with the *existing* Talos credentials at the assigned IP.
+4. Check Talos health, etcd member health, node IP selection, the
+   Kubernetes API, and Cilium. The original control-plane endpoint,
+   kubeconfig server, and API certificate SANs may still reference
+   `192.168.127.10`. Update the **existing** Talos machine config and
+   kubeconfig to the chosen LAN address, preserving existing PKI;
+   validate TLS and API access before declaring the migration complete.
+   A change of node address can require Kubernetes/Cilium reconciliation.
+   No applications depend on this cluster yet, so repairing or
+   rebuilding the guest is an acceptable last resort.
+
+Never rerun `talosctl bootstrap` on the existing etcd data. Do not
+`virsh destroy` the VM or reattach its installation ISO. The host stays
+accessible via SSH on `192.168.1.137` throughout; libvirt's serial
+console provides guest recovery even if Talos networking is broken.
 
 ## Automatic Cilium bootstrap
 
@@ -59,14 +106,20 @@ Kubernetes 1.36, while Talos v1.14.5 generates Kubernetes 1.37.1;
 do not treat the version pairing as production-supported without
 acceptance tests.
 
-## First installation
+## First installation (new cluster only)
+
+For a brand-new cluster using the LAN bridge, boot the guest to obtain a
+DHCP lease, then make that lease fixed in the router and set `TALOS_IP`
+to the assigned address (example: `export TALOS_IP=<actual-leased-ip>`). The commands below describe
+*initial installation*, not migration of the already bootstrapped
+`meawhite` cluster.
 
 **Do not run the old meawhite unattended host installer to create or
 repair a VM.** That USB installer erases the physical host disks.
 
 1. Install and unlock the NixOS host, confirm `findmnt /data`, RAID
    health and sufficient space on both filesystems, then apply the
-   meawhite NixOS configuration. The libvirt VM is defined but stopped.
+   meawhite NixOS configuration. The libvirt VM is defined and may be started automatically when `meawhite.talos.start = true`.
    Check `systemctl status nixvirt`, `virsh -c qemu:///system list --all`,
    `virsh -c qemu:///system pool-list --all`, and
    `virsh -c qemu:///system net-list --all`.
@@ -86,12 +139,12 @@ repair a VM.** That USB installer erases the physical host disks.
    The ISO boots first while attached. If bootloader output is not
    visible on the serial console, use `virt-viewer` or the graphical
    console to inspect the installer; do not guess disk identities.
-4. From meawhite or a machine with a route into the libvirt network,
+4. From meawhite or a machine with a route into the LAN,
    use a `talosctl` client matching **v1.14.5** to inspect the guest
    disks **before generating configuration**:
 
    ```sh
-   talosctl get disks --insecure --nodes 192.168.127.10 -o yaml
+   talosctl get disks --insecure --nodes "$TALOS_IP" -o yaml
    ```
 
    Verify which disk is the 64 GiB system disk and which is the 256 GiB
@@ -107,7 +160,7 @@ repair a VM.** That USB installer erases the physical host disks.
    bash meawhite/talos/render-cilium.sh \
      "$HOME/.local/state/meawhite-talos/cilium-bootstrap.patch.yaml"
 
-   talosctl gen config meawhite https://192.168.127.10:6443 \
+   talosctl gen config meawhite "https://${TALOS_IP}:6443" \
      --talos-version v1.14.5 \
      --install-disk "$SYSTEM_DISK" \
      --config-patch-control-plane @meawhite/talos/cilium.patch.yaml \
@@ -125,7 +178,7 @@ repair a VM.** That USB installer erases the physical host disks.
 6. Apply the machine config only after reviewing it:
 
    ```sh
-   talosctl apply-config --insecure --nodes 192.168.127.10 \
+   talosctl apply-config --insecure --nodes "$TALOS_IP" \
      --file ~/.local/state/meawhite-talos/controlplane.yaml
    ```
 
@@ -142,7 +195,7 @@ repair a VM.** That USB installer erases the physical host disks.
    bootstrap manifests and Kubernetes status:
 
    ```sh
-   talosctl --nodes 192.168.127.10 get manifests
+   talosctl --nodes "$TALOS_IP" get manifests
    kubectl -n kube-system rollout status daemonset/cilium --timeout=5m
    kubectl -n kube-system rollout status deployment/cilium-operator --timeout=5m
    kubectl get nodes -o wide
