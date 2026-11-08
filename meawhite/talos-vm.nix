@@ -140,7 +140,7 @@ in
                 memballoon.model = "none";
               };
             };
-            active = cfg.start;
+            active = if cfg.start then true else null;
             # A rebuild can redefine XML, but must not power-cycle etcd.
             restart = false;
           }
