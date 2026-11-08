@@ -36,6 +36,29 @@ cluster workloads. No Incus or OpenTofu is involved.
   pool definition does *not* delete its backing files, but manually
   deleting a volume is destructive. Keep tested off-host backups.
 
+## Automatic Cilium bootstrap
+
+Talos v1.14.5's `KubeInlineManifestConfig` automatically applies
+**rendered Kubernetes resources** at cluster bootstrap. Talos does not
+run Helm or a Helm controller: the Helm chart must be rendered first.
+
+The source of truth for the initial CNI is [cilium-values.yaml](cilium-values.yaml),
+derived from Digital Garden's working Talos-safe Cilium settings, with
+Cilium **v1.20.4** pinned in [render-cilium.sh](render-cilium.sh).
+Render the chart in `nix develop .#meawhite-talos`, which provides pinned
+`talosctl`, `helm` and Cilium CLI tooling. The renderer writes a **typed
+Talos patch** into the private state directory, not into Git or the
+Nix store. Include that patch at first machine-config generation.
+
+This is **not a Helm release** and not ongoing GitOps. Upgrades and
+a future Argo CD ownership handoff require an explicit plan; never
+install a second Cilium copy with `helm install` or implicitly hand
+its resources to Argo. Talos's bootstrap manifest is only an initial
+installation mechanism. Cilium v1.20.4 has been e2e-tested up to
+Kubernetes 1.36, while Talos v1.14.5 generates Kubernetes 1.37.1;
+do not treat the version pairing as production-supported without
+acceptance tests.
+
 ## First installation
 
 **Do not run the old meawhite unattended host installer to create or
@@ -78,20 +101,26 @@ repair a VM.** That USB installer erases the physical host disks.
    disk path (`SYSTEM_DISK`), not an unverified example:
 
    ```sh
+   nix develop .#meawhite-talos
    umask 077
    mkdir -p ~/.local/state/meawhite-talos
+   bash meawhite/talos/render-cilium.sh \
+     "$HOME/.local/state/meawhite-talos/cilium-bootstrap.patch.yaml"
+
    talosctl gen config meawhite https://192.168.127.10:6443 \
      --talos-version v1.14.5 \
      --install-disk "$SYSTEM_DISK" \
      --config-patch-control-plane @meawhite/talos/cilium.patch.yaml \
+     --config-patch-control-plane @"$HOME/.local/state/meawhite-talos/cilium-bootstrap.patch.yaml" \
      --config-patch @meawhite/talos/installer.patch.yaml \
      --output-dir ~/.local/state/meawhite-talos
    talosctl validate --config ~/.local/state/meawhite-talos/controlplane.yaml --mode metal
    ```
 
    Confirm the generated **v1.14 typed** `UnattendedInstallConfig`
-   points to the correct system disk, that Flannel/kube-proxy are off
-   and the control-plane taint is removed. Keep Talos credentials,
+   points to the correct system disk, that Flannel/kube-proxy are off,
+   that the control-plane taint is removed, and that the generated
+   `KubeInlineManifestConfig` contains the reviewed Cilium resources. Keep Talos credentials,
    generated config and kubeconfig **outside Git and the Nix store**.
 6. Apply the machine config only after reviewing it:
 
@@ -107,11 +136,26 @@ repair a VM.** That USB installer erases the physical host disks.
    definition has been applied. Verify boot from disk before removing
    the ISO file.
 7. Bootstrap etcd **once** with the retained Talos credentials.
-   Check `talosctl health`, `kubectl get nodes` and the node IP.
-   Install pinned Cilium using the single-node Talos-compatible values
-   documented in the reference `digital-garden/cluster/bootstrap/cilium`
-   (without allowing another controller to own its initial Helm release).
-   The Kubernetes API will not be fully usable until the CNI is ready.
+   Talos applies the embedded Cilium manifests automatically when
+   the Kubernetes API becomes available; **do not run `helm install`
+   or `kubectl apply` against Cilium separately**. Inspect the Talos
+   bootstrap manifests and Kubernetes status:
+
+   ```sh
+   talosctl --nodes 192.168.127.10 get manifests
+   kubectl -n kube-system rollout status daemonset/cilium --timeout=5m
+   kubectl -n kube-system rollout status deployment/cilium-operator --timeout=5m
+   kubectl get nodes -o wide
+   cilium status --wait
+   cilium connectivity test --single-node \
+     --namespace-labels pod-security.kubernetes.io/enforce=privileged
+   ```
+
+   If the API is not reachable or Cilium fails to become ready, inspect
+   Talos manifest resources, Cilium pods/events and the node before
+   changing anything. On this one-node cluster, CoreDNS and Kubernetes
+   node readiness may lag until Cilium starts. Keep the Pod Security
+   exception limited to the temporary connectivity test namespaces.
    Argo CD Core and application GitOps are separate, subsequent steps.
 8. For the second disk, create a Talos `UserVolumeConfig` only after
    inspecting **live guest disk identity and size**. A UserVolume can
