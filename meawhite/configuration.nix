@@ -1,6 +1,6 @@
 { config, lib, pkgs, modulesPath, ... }:
 {
-  imports = [ ./disko.nix (modulesPath + "/installer/scan/not-detected.nix") ];
+  imports = [ ./disko.nix ./talos-vm.nix (modulesPath + "/installer/scan/not-detected.nix") ];
   networking.hostName = "meawhite";
   networking.useDHCP = lib.mkDefault true;
   networking.firewall.enable = true;
