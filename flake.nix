@@ -4,6 +4,10 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     disko = { url = "github:nix-community/disko"; inputs.nixpkgs.follows = "nixpkgs"; };
     lanzaboote = { url = "github:nix-community/lanzaboote"; inputs.nixpkgs.follows = "nixpkgs"; };
+    nixvirt = {
+      url = "https://flakehub.com/f/AshleyYakeley/NixVirt/*.tar.gz";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -18,6 +22,7 @@
       home-manager,
       disko,
       lanzaboote,
+      nixvirt,
       ...
     }:
 
@@ -92,7 +97,16 @@
       };
 
       nixosConfigurations = {
-        meawhite = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./meawhite/configuration.nix ]; };
+        meawhite = lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit nixvirt; };
+          modules = [
+            disko.nixosModules.disko
+            lanzaboote.nixosModules.lanzaboote
+            nixvirt.nixosModules.default
+            ./meawhite/configuration.nix
+          ];
+        };
         meawhite-secure = self.nixosConfigurations.meawhite.extendModules {
           modules = [ ./meawhite/secure-boot.nix ];
         };
