@@ -2,7 +2,15 @@
 {
   imports = [ ./disko.nix ./talos-vm.nix (modulesPath + "/installer/scan/not-detected.nix") ];
   networking.hostName = "meawhite";
-  networking.useDHCP = lib.mkDefault true;
+  # Bridge the physical LAN only after a guarded remote network migration.
+  # Keep the host DHCP reservation by reusing enp129s0's observed MAC.
+  networking.useDHCP = false;
+  networking.bridges.br0.interfaces = [ "enp129s0" ];
+  networking.interfaces.enp129s0.useDHCP = false;
+  networking.interfaces.br0 = {
+    useDHCP = true;
+    macAddress = "9c:6b:00:96:f2:10";
+  };
   networking.firewall.enable = true;
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -34,4 +42,10 @@
   users.users.root.openssh.authorizedKeys.keyFiles = [ ./authorized_keys ];
   environment.systemPackages = with pkgs; [ cryptsetup mdadm sbctl pciutils tpm2-tools helix git ];
   system.stateVersion = "26.05";
+
+  # The Talos guest is now installed; never reattach the installer ISO.
+  meawhite.talos = {
+    installerIso = null;
+    start = true;
+  };
 }

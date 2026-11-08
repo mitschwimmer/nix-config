@@ -28,6 +28,33 @@ target containing the live ISO. Failed preflight causes no formatting.
 Existing active arrays/mappings cause a refusal rather than being stopped
 automatically. Installation failure leaves the machine powered on; no retry.
 
+## LAN bridge for the Talos VM
+
+The host uses `dhcpcd` and has one active physical LAN interface,
+`enp129s0`. Its DHCP configuration is moved onto Linux bridge `br0`,
+which is given the host's previous MAC address
+(`9c:6b:00:96:f2:10`) to preserve the router's existing MAC-based DHCP
+reservation where possible. Confirm the router still assigns the
+expected host IP (`192.168.1.137`) after the change: a DHCP client
+identifier or lease change may still result in a different address.
+
+**Do not remotely activate this bridge without a tested rollback.**
+An activation can drop the running SSH connection and host DHCP lease.
+First build the `meawhite-secure` closure without activating it; then
+arrange an out-of-band console or a host-side timed rollback to the
+previous known-good NixOS generation. Test with a new SSH connection
+and verify `ip -4 addr show br0`, `ip -4 route`, and reachability from
+`meanovo` before cancelling rollback. Only then consider making the
+change persistent across reboots.
+
+This stage creates **only the host LAN bridge**. The Talos VM deliberately
+retains its existing private `virbr-talos` NAT interface and
+`192.168.127.10` address. Its Kubernetes API and Talos API therefore
+still require the current SSH access path. Moving the VM to `br0`,
+giving Talos a stable LAN address and migrating its control-plane
+endpoint/certificates is a separate reviewed, controlled change.
+Cilium Gateway API / Envoy is not enabled by the bridge alone.
+
 ## Build the offline USB
 
 On a private, internet-connected x86_64 Linux build machine with Nix, flakes,
