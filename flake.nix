@@ -61,7 +61,8 @@
 
     in
     {
-      packages.${system}.meablack-installer =
+      packages.${system} = {
+      meablack-installer =
         (lib.nixosSystem {
           inherit system;
           specialArgs = {
@@ -75,7 +76,7 @@
           modules = [ ./meablack/installer.nix ];
         }).config.system.build.isoImage;
 
-      packages.${system}.meawhite-installer =
+      meawhite-installer =
         (lib.nixosSystem {
           inherit system;
           specialArgs = {
@@ -88,6 +89,7 @@
           };
           modules = [ ./meawhite/installer.nix ];
         }).config.system.build.isoImage;
+      };
 
       nixosConfigurations = {
         meawhite = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./meawhite/configuration.nix ]; };
