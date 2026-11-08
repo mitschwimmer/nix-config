@@ -26,7 +26,7 @@ cluster workloads. No Incus or OpenTofu is involved.
 - The NixVirt-managed `qemu:///system` domain/network/pool lists are
   **authoritative**: NixVirt can undefine libvirt objects omitted from
   these lists. Do not use this connection for unrelated VMs.
-- VM starts **disabled**: `meawhite.talos.start = false`. Only enable
+- VM starts **disabled**: `meawhite.talos.start = false`. The false default leaves a currently running VM alone on later rebuilds. Only enable
   startup after the installer ISO and disk state have been checked.
   NixVirt is configured not to restart a running domain on NixOS
   rebuild, even if the persistent domain XML changes. Schedule a
@@ -84,6 +84,7 @@ repair a VM.** That USB installer erases the physical host disks.
      --talos-version v1.14.5 \
      --install-disk "$SYSTEM_DISK" \
      --config-patch-control-plane @meawhite/talos/cilium.patch.yaml \
+     --config-patch @meawhite/talos/installer.patch.yaml \
      --output-dir ~/.local/state/meawhite-talos
    talosctl validate --config ~/.local/state/meawhite-talos/controlplane.yaml --mode metal
    ```
