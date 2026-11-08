@@ -1,0 +1,6 @@
+# Talos v1.14 typed installer configuration for the unextended metal ISO.
+# --install-disk determines the generated provisioning diskSelector.
+apiVersion: v1alpha1
+kind: UnattendedInstallConfig
+installer:
+  image: ghcr.io/siderolabs/installer:v1.14.5
