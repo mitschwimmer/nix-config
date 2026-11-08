@@ -133,6 +133,15 @@ in
                     model.type = "virtio";
                     mac.address = mac;
                   }
+                  # Secondary LAN NIC. Retain NAT as the bootstrap/recovery path.
+                  # NixVirt does not restart the running guest on a rebuild;
+                  # add an explicit Talos network policy before its next reboot.
+                  {
+                    type = "bridge";
+                    source.bridge = "br0";
+                    model.type = "virtio";
+                    mac.address = "52:54:00:7a:10:02";
+                  }
                 ];
                 serial = [ { type = "pty"; } ];
                 console = [ { type = "pty"; } ];

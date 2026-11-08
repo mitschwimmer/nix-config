@@ -36,6 +36,54 @@ cluster workloads. No Incus or OpenTofu is involved.
   pool definition does *not* delete its backing files, but manually
   deleting a volume is destructive. Keep tested off-host backups.
 
+## Staged LAN NIC (not live until controlled guest restart)
+
+The NixOS host now has Linux bridge `br0` on the physical LAN. The VM
+definition has a **second** virtio interface attached to `br0`, with a
+distinct permanent MAC of `52:54:00:7a:10:02`. The original interface
+(`52:54:00:7a:10:01`) remains on the private `talos` NAT network at
+`192.168.127.10`. No installer disk, VM resources, or Cilium configuration
+is changed. The gateway is not yet exposed.
+
+**Do not reboot Talos simply to pick up the NIC.** NixVirt's
+`restart = false` preserves the live VM during NixOS activation; adding a
+persistent libvirt NIC alone does not configure the running Talos guest.
+Talos may automatically enable DHCP on a newly detected NIC and install a
+second default route. That could alter the kubelet/node address or interrupt
+API and CNI traffic. Before intentionally starting a VM with the new NIC:
+
+1. Preserve off-host backups of Talos credentials, current machine
+   configuration and kubeconfig. Confirm `kubectl get nodes` is Ready and
+   Cilium is healthy through the existing NAT/SSH path.
+2. Inspect the live Talos links, routes and selected node addresses:
+   `talosctl get links -o yaml`,
+   `talosctl get routespecs -o yaml`,
+   `talosctl get nodeaddresses -o yaml`.
+   Pass the existing authenticated `--endpoints` and `--nodes` flags
+   when using the SSH tunnel from `meanovo`.
+3. Create and validate a **typed Talos v1.14** network patch tied to
+   the new MAC (e.g. `LinkAliasConfig` plus `DHCPv4Config` with
+   `ignoreRoutes: true`), so the LAN obtains an address without
+   competing with the existing NAT default route. Review kubelet/node
+   address selection explicitly. Apply it using the *existing* Talos
+   credentials and test before a controlled guest shutdown/restart.
+   Never generate fresh cluster secrets for a running cluster.
+4. Review the persistent libvirt definition with
+   `virsh -c qemu:///system dumpxml talos --inactive`, then perform
+   an intentional Talos shutdown/start during a maintenance window.
+   Verify both NICs, the LAN DHCP lease, private API recovery path,
+   Kubernetes node readiness, and Cilium before modifying the
+   Kubernetes control-plane endpoint or kubeconfig.
+5. Give the new guest MAC a stable LAN reservation before relying on it.
+   A later change will migrate API endpoint/certificate addressing,
+   expose Gateway API/Envoy listeners, and consider removing NAT only
+   after end-to-end tests. Do not forward ports 50000 or 6443 to the
+   public internet.
+
+The second NIC is only groundwork for LAN access, not a complete network
+migration. The `192.168.127.10` kubeconfig and private NAT connection
+remain the recovery path for now.
+
 ## Automatic Cilium bootstrap
 
 Talos v1.14.5's `KubeInlineManifestConfig` automatically applies
