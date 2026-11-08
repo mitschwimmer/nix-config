@@ -18,8 +18,9 @@ cluster workloads. No Incus or OpenTofu is involved.
   before writing to them.
 - One virtio NIC using host bridge `br0` on the `192.168.1.0/24`
   LAN, with MAC `52:54:00:7a:10:01`. The LAN's DHCP server assigns
-  the guest address. Reserve a stable address for this MAC at the router;
-  **do not assume that `192.168.1.49` is available or assigned**.
+  the guest address. Once the router sees this MAC and assigns a lease,
+  make that lease permanent in the router. Do not assume any address
+  before the first LAN boot.
   Talos API (50000) and Kubernetes API (6443) will become LAN-reachable:
   restrict LAN access as needed and do not forward them on the router.
   The former `talos` libvirt NAT network is removed on activation.
@@ -50,27 +51,24 @@ No user workloads are deployed yet, so an interruption to the
 single-node Kubernetes cluster is acceptable. **Do not re-bootstrap etcd
 or regenerate Talos secrets as a routine part of the migration.**
 
-1. Reserve a free `192.168.1.x` address in the LAN router for MAC
-   `52:54:00:7a:10:01`. The chosen value must be confirmed at the
-   router; do not hard-code an unverified address into Git.
-2. Before the switch, preserve the current private Talos configuration
+1. Before the switch, preserve the current private Talos configuration
    and kubeconfig from `meanovo`. With the existing SSH tunnels running,
    confirm that the node is ready, and shut Talos down cleanly with
    authenticated `talosctl shutdown` (using the old NAT endpoint).
    Confirm `virsh -c qemu:///system domstate talos` is `shut off`.
-3. Build and activate the NixOS configuration from this change on
+2. Build and activate the NixOS configuration from this change on
    `meawhite`. With the guest shut down, NixVirt can redefine the
    persistent domain to use `br0` and remove the previous managed NAT
    network. `meawhite.talos.start = true` requests guest startup.
    Review `virsh -c qemu:///system dumpxml talos --inactive` to verify
    exactly one NIC, type `bridge`, source `br0`, and the original MAC.
-4. Identify the actual guest address from the router's lease table
-   using its MAC. Talos uses DHCP when no static network configuration
-   has been supplied; inspect the guest console and active Talos
-   configuration if it fails to acquire the expected address. Test the
-   Talos API from `meanovo` using the *existing* Talos credentials and
-   the new LAN IP.
-5. Check Talos health, etcd member health, node IP selection, the
+3. Allow the VM's LAN NIC to obtain its initial address via DHCP.
+   Find the new lease in the router using MAC `52:54:00:7a:10:01`,
+   then mark the router's assigned address as fixed. Talos uses DHCP
+   when no static network configuration has been supplied; inspect
+   the guest console if it does not appear. Test the Talos API from
+   `meanovo` with the *existing* Talos credentials at the assigned IP.
+4. Check Talos health, etcd member health, node IP selection, the
    Kubernetes API, and Cilium. The original control-plane endpoint,
    kubeconfig server, and API certificate SANs may still reference
    `192.168.127.10`. Update the **existing** Talos machine config and
@@ -110,9 +108,9 @@ acceptance tests.
 
 ## First installation (new cluster only)
 
-For a brand-new cluster using the LAN bridge, reserve the NIC's MAC at
-the router and set `TALOS_IP` to its actual DHCP address (example shell
-setup: `export TALOS_IP=<actual-leased-ip>`). The commands below describe
+For a brand-new cluster using the LAN bridge, boot the guest to obtain a
+DHCP lease, then make that lease fixed in the router and set `TALOS_IP`
+to the assigned address (example: `export TALOS_IP=<actual-leased-ip>`). The commands below describe
 *initial installation*, not migration of the already bootstrapped
 `meawhite` cluster.
 
