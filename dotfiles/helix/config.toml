@@ -2,7 +2,7 @@
 #[theme]
 #dark = "gruvbox-material"
 #light = "gruvbox_light"
-theme = "gruvbox"
+theme = "base16_transparent"
 
 [editor]
 line-number = "relative"
