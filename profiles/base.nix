@@ -13,20 +13,6 @@
     completion.enable = true;
   };
 
-
-  # Shared by all installed machines; graphical services are opt-in.
-  programs.tmux = {
-    enable = lib.mkDefault true;
-    shortcut = "a";
-    keyMode = "vi";
-    customPaneNavigationAndResize = true;
-    terminal = "tmux-256color";
-    escapeTime = 0;
-    extraConfig = ''
-      set -as terminal-features ',foot*:RGB'
-    '';
-  };
-
   # Make Foot's terminal description available on SSH destinations too.
   environment.systemPackages = [ pkgs.foot.terminfo ];
 

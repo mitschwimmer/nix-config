@@ -2,6 +2,7 @@
   imports = [
     ./cli.nix
     ./shell.nix
+    ./tmux.nix
   ];
 
   home = {

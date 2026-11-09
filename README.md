@@ -4,9 +4,9 @@ Every installed machine is composed through `mkHost` in `flake.nix`:
 
 | Module | Purpose |
 | --- | --- |
-| `profiles/base.nix` | Nix settings, timezone, Bash/ble.sh, tmux, key-only SSH and terminal definitions |
+| `profiles/base.nix` | Nix settings, timezone, Bash/ble.sh, key-only SSH and terminal definitions |
 | `users/henner.nix` | Henner's account, wheel membership, SSH keys and Home Manager integration |
-| `home/henner/default.nix` | Shared shell, CLI packages, Git identities and Helix configuration |
+| `home/henner/default.nix` | Shared shell, CLI packages, Git identities, Helix and tmux configuration |
 | `profiles/workstation.nix` | Desktop system services, NetworkManager membership and desktop Home Manager imports |
 | `home/henner/desktop.nix` | Graphical applications, desktop dotfiles and aliases |
 | `<host>/configuration.nix` | Hardware, boot, networking and host workloads |
@@ -42,11 +42,17 @@ Manager state versions retain their existing values.
 
 ## Terminal
 
-Foot replaces Ghostty on workstations. Niri's Mod+T opens a Foot 
-session. Use Ctrl+A as the tmux prefix: c creates a window, n/p changes windows,
-h/j/k/l selects panes, % splits horizontally, and " splits vertically. Prefix z
-zooms a pane, d detaches, and `tmux attach` reconnects. Send a literal Ctrl+A with
-prefix a.
+Foot replaces Ghostty on workstations. Niri's Mod+T opens a Foot
+session. Home Manager configures tmux in `home/henner/tmux.nix` on all hosts.
+Its prefix is Alt+backtick (the key left of 1 on a US keyboard). After the
+prefix, h/j/k/l selects a pane, s followed by h/j/k/l opens a pane in that
+direction, c creates a new window, and n/p changes windows. Window and pane
+indices begin at 1. Prefix ? shows tmux's built-in keybinding help, z zooms a
+pane, and d detaches; `tmux attach` reconnects.
+
+The status bar shows the tmux server's hostname and numbered windows, with the
+active window inverted. It follows the terminal's default foreground and
+background colors, without a clock, date or plugin theme.
 
 Foot uses JetBrainsMono Nerd Font and Gruvbox. Ctrl+Shift+T switches between dark
 and light palettes; Ctrl+plus/minus/0 adjusts or resets the font size.
