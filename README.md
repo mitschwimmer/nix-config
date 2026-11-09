@@ -44,15 +44,18 @@ Manager state versions retain their existing values.
 
 Foot replaces Ghostty on workstations. Niri's Mod+T opens a Foot
 session. Home Manager configures tmux in `home/henner/tmux.nix` on all hosts.
-Its prefix is Alt+backtick (the key left of 1 on a US keyboard). After the
+Its prefix is Ctrl+B. After the
 prefix, h/j/k/l selects a pane, s followed by h/j/k/l opens a pane in that
 direction, c creates a new window, and n/p changes windows. Window and pane
 indices begin at 1. Prefix ? shows tmux's built-in keybinding help, z zooms a
 pane, and d detaches; `tmux attach` reconnects.
 
 The status bar shows the tmux server's hostname and numbered windows, with the
-active window inverted. It follows the terminal's default foreground and
-background colors, without a clock, date or plugin theme.
+active window highlighted using rounded Powerline glyphs from the terminal's
+Nerd Font. It follows the terminal's default foreground and background colors,
+without a clock, date or plugin theme. Restart existing tmux servers after
+deploying the prefix change; Home Manager's default Ctrl+B binding is only
+initialized automatically when tmux starts.
 
 Foot uses JetBrainsMono Nerd Font and Gruvbox. Ctrl+Shift+T switches between dark
 and light palettes; Ctrl+plus/minus/0 adjusts or resets the font size.

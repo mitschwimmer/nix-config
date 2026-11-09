@@ -1,7 +1,7 @@
 {
   programs.tmux = {
     enable = true;
-    prefix = "M-`";
+    prefix = "C-b";
     keyMode = "vi";
     customPaneNavigationAndResize = true;
     baseIndex = 1;
@@ -26,14 +26,18 @@
       set -g status-position bottom
       set -g status-justify left
       set -g status-style "fg=default,bg=default"
-      set -g status-left "#[reverse,bold] #{host_short} #[default] │ "
+
+      # Rounded Powerline caps are provided by the configured Nerd Font.
+      # Reverse-video text uses the terminal's default foreground/background.
+      set -g status-left-style "fg=default,bg=default"
+      set -g status-left "#[reverse,bold] #{host_short} #[default] │ "
       set -g status-left-length 40
       set -g status-right ""
-      set -g window-status-separator ""
+      set -g window-status-separator " "
       set -g window-status-format " #I:#W "
       set -g window-status-style "dim"
-      set -g window-status-current-format " #I:#W "
-      set -g window-status-current-style "reverse,bold"
+      set -g window-status-current-format "#[reverse,bold] #I:#W #[default]"
+      set -g window-status-current-style "fg=default,bg=default"
     '';
   };
 }

@@ -19,7 +19,7 @@ builtins.mapAttrs (name: host:
   assert require (home.home.stateVersion == "26.05") "Home Manager state version changed";
   assert require (home.programs.bash.enable && home.programs.starship.enable && home.programs.tmux.enable) "shared terminal environment missing";
   assert require (!config.programs.tmux.enable) "tmux must be managed by Home Manager";
-  assert require (home.programs.tmux.prefix == "M-`" && home.programs.tmux.baseIndex == 1) "tmux prefix and indices changed";
+  assert require (home.programs.tmux.prefix == "C-b" && home.programs.tmux.baseIndex == 1) "tmux prefix and indices changed";
   assert require (builtins.all (p: builtins.elem p packages) [ "helix" "git" "delta" "ripgrep" ]) "shared CLI packages missing";
   assert require (home.xdg.configFile ? "helix/config.toml" && home.home.file ? ".gitconfig") "shared dotfiles missing";
   assert require (config.programs.niri.enable == desktop) "Niri profile mismatch";

@@ -13,5 +13,3 @@ insert = "bar"
 normal = "block"
 select = "underline"
 
-[keys.normal]
-"C-b" = ":sh javac @cmd/compile && java @cmd/test"
