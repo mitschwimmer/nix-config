@@ -7,6 +7,10 @@
 
   # Use the terminal's ANSI palette, following Foot's Gruvbox theme.
   home.file.".blerc".text = ''
+    # Alt+Up inserts the previous command's last argument, like Alt+period.
+    ble-bind -m emacs -f 'M-up' insert-last-argument
+    ble-bind -m lastarg -f 'M-up' lastarg/next
+
     bleopt term_index_colors=16
     bleopt term_true_colors=
     ble-face auto_complete='fg=8,italic'
