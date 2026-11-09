@@ -4,8 +4,8 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     disko = { url = "github:nix-community/disko"; inputs.nixpkgs.follows = "nixpkgs"; };
     lanzaboote = { url = "github:nix-community/lanzaboote"; inputs.nixpkgs.follows = "nixpkgs"; };
-    nixvirt = {
-      url = "https://flakehub.com/f/AshleyYakeley/NixVirt/*.tar.gz";
+    microvm = {
+      url = "github:microvm-nix/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
@@ -22,13 +22,14 @@
       home-manager,
       disko,
       lanzaboote,
-      nixvirt,
+      microvm,
       ...
     }:
 
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
+      nodes = import ./kubernetes/nodes.nix;
 
       pkgs-unstable = import nixpkgs-unstable {
         inherit system;
@@ -49,10 +50,6 @@
 
     in
     {
-      devShells.${system}.meawhite-talos = import ./meawhite/talos/shell.nix {
-        pkgs = nixpkgs.legacyPackages.${system};
-      };
-
       packages.${system} = {
       meablack-installer =
         (lib.nixosSystem {
@@ -83,14 +80,19 @@
         }).config.system.build.isoImage;
       };
 
-      nixosConfigurations = {
+      nixosConfigurations = lib.mapAttrs (name: node: lib.nixosSystem {
+        inherit system;
+        specialArgs = { inherit name node; };
+        modules = [ microvm.nixosModules.microvm ./kubernetes/guest.nix ];
+      }) nodes // {
         meawhite = mkHost {
           name = "meawhite";
-          specialArgs = { inherit nixvirt; };
+          specialArgs = { inherit self; };
           modules = [
             disko.nixosModules.disko
             lanzaboote.nixosModules.lanzaboote
-            nixvirt.nixosModules.default
+            microvm.nixosModules.host
+            ./profiles/microvm-host.nix
           ];
         };
         meawhite-secure = self.nixosConfigurations.meawhite.extendModules {
@@ -98,7 +100,13 @@
         };
         meablack = mkHost {
           name = "meablack";
-          modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ];
+          specialArgs = { inherit self; };
+          modules = [
+            disko.nixosModules.disko
+            lanzaboote.nixosModules.lanzaboote
+            microvm.nixosModules.host
+            ./profiles/microvm-host.nix
+          ];
         };
         # Use after generating /var/lib/sbctl keys on the installed host.
         # The offline installer continues using the unsigned bootstrap profile.

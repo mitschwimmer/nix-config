@@ -2,6 +2,7 @@
 {
   imports = [
     ./disko.nix
+    ./microvms.nix
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 

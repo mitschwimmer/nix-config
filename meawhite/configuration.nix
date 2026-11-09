@@ -1,6 +1,6 @@
 { config, lib, pkgs, modulesPath, ... }:
 {
-  imports = [ ./disko.nix ./talos-vm.nix (modulesPath + "/installer/scan/not-detected.nix") ];
+  imports = [ ./disko.nix ./microvms.nix (modulesPath + "/installer/scan/not-detected.nix") ];
   networking.hostName = "meawhite";
   # Bridge the physical LAN only after a guarded remote network migration.
   # Keep the host DHCP reservation by reusing enp129s0's observed MAC.
@@ -39,9 +39,4 @@
   environment.systemPackages = with pkgs; [ cryptsetup mdadm sbctl pciutils tpm2-tools helix git ];
   system.stateVersion = "26.05";
 
-  # The Talos guest is now installed; never reattach the installer ISO.
-  meawhite.talos = {
-    installerIso = null;
-    start = true;
-  };
 }

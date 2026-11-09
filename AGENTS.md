@@ -18,8 +18,8 @@ All outputs target x86_64-linux.
 | tmux | `home/henner/tmux.nix` | README's Terminal section |
 | Graphical apps or desktop dotfiles | `home/henner/desktop.nix` | Only the relevant app directory in `dotfiles/` |
 | Server hardware, storage or installation | `<host>/configuration.nix` | Host-local `disko.nix`, `installer.nix`, referenced scripts; runbook section in `<host>/README.md` |
-| Talos VM, disks or bridge | `meawhite/talos-vm.nix` | `meawhite/configuration.nix`, relevant section in `meawhite/talos/README.md` |
-| Talos/Cilium tooling or bootstrap | `meawhite/talos/shell.nix` | Relevant YAML or `render-cilium.sh` in that directory |
+| MicroVM hosts or bridge | `<host>/microvms.nix` | `profiles/microvm-host.nix`, `docs/bootstrap.md` |
+| Kubernetes guest identity, resources or storage | `kubernetes/nodes.nix` | `kubernetes/guest.nix`, `docs/architecture.md`, `docs/operations.md` |
 | Shared profile expectations | `tests/profiles.nix` | `.github/workflows/defaults.yml` |
 
 Use `rg --files` to locate files and `rg -n 'pattern' <relevant-paths>` to locate
@@ -64,8 +64,10 @@ nix eval --no-update-lock-file --impure --json --expr '
 For installer scripts, use `bash -n`, ShellCheck, and the host's mock disk tests:
 `python3 meablack/test-select-disk.py` or `bash meawhite/test-check-disks.sh`.
 For Foot, use the pinned-package check in `.github/workflows/defaults.yml`.
-For Talos tooling, enter `nix develop --no-update-lock-file .#meawhite-talos`;
-the meawhite workflow has the rendering and validation commands.
+For MicroVMs, evaluate `tests/microvms.nix` as described in
+`docs/operations.md`, then evaluate each guest's `config.microvm.declaredRunner.drvPath`.
+The microvms workflow also builds the test guest runner. LAN, persistence and
+host-reboot acceptance must be checked on the real hosts before adding K3s.
 
 Use `.github/workflows/<host>.yml` for full server and installer builds.
 Evaluation does not establish build or runtime success. Report which checks ran

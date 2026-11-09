@@ -47,13 +47,10 @@ and verify `ip -4 addr show br0`, `ip -4 route`, and reachability from
 `meanovo` before cancelling rollback. Only then consider making the
 change persistent across reboots.
 
-This stage creates **only the host LAN bridge**. The Talos VM deliberately
-retains its existing private `virbr-talos` NAT interface and
-`192.168.127.10` address. Its Kubernetes API and Talos API therefore
-still require the current SSH access path. Moving the VM to `br0`,
-giving Talos a stable LAN address and migrating its control-plane
-endpoint/certificates is a separate reviewed, controlled change.
-Cilium Gateway API / Envoy is not enabled by the bridge alone.
+The bridge remains in place for NixOS MicroVMs. The previous Talos/NixVirt
+configuration is retired. Before activating this revision, shut the old guest
+down as described in [../docs/bootstrap.md](../docs/bootstrap.md). Its existing
+disk files are retained; the new guests do not reuse them.
 
 ## Build the offline USB
 
