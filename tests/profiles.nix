@@ -1,6 +1,6 @@
 { nixosConfigurations }:
 let
-  workstations = [ "mearock" "meaxps" "meatab" "meanovo" ];
+  workstations = [ "meatab" "meanovo" ];
 in
 builtins.mapAttrs (name: host:
   let

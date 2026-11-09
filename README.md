@@ -1,5 +1,10 @@
 # NixOS configuration
 
+For targeted exploration and validation commands, start with [AGENTS.md](AGENTS.md).
+Host installation and recovery procedures are in [meablack/README.md](meablack/README.md)
+and [meawhite/README.md](meawhite/README.md); Talos operations are in
+[meawhite/talos/README.md](meawhite/talos/README.md).
+
 Every installed machine is composed through `mkHost` in `flake.nix`:
 
 | Module | Purpose |
@@ -11,8 +16,8 @@ Every installed machine is composed through `mkHost` in `flake.nix`:
 | `home/henner/desktop.nix` | Graphical applications, desktop dotfiles and aliases |
 | `<host>/configuration.nix` | Hardware, boot, networking and host workloads |
 
-meablack and meawhite use the shared system and user modules. mearock, meaxps,
-meatab and meanovo additionally select the workstation profile. Secure Boot
+meablack and meawhite use the shared system and user modules. meatab and meanovo
+additionally select the workstation profile. Secure Boot
 variants inherit the complete installed-host configuration. Installer live
 systems remain separate and include the composed target system for offline use.
 

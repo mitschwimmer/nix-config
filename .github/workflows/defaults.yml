@@ -21,7 +21,7 @@ jobs:
       - name: Evaluate every machine and Secure Boot variant
         run: |
           set -euo pipefail
-          for host in meablack meablack-secure meawhite meawhite-secure mearock meaxps meatab meanovo; do
+          for host in meablack meablack-secure meawhite meawhite-secure meatab meanovo; do
             nix eval --no-update-lock-file --raw ".#nixosConfigurations.${host}.config.system.build.toplevel.drvPath"
           done
       - name: Validate Foot configuration with the pinned package

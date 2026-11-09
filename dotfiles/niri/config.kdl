@@ -11,7 +11,7 @@ input {
     }
 }
 
-// mearock display
+// ASUS external display (matched by monitor identity, usable on any workstation)
 output "ASUSTek COMPUTER INC XG32UCWMG T7LMQS028558" {
   mode "3840x2160@120.000"
     backdrop-color "#000000"
