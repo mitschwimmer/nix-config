@@ -1,3 +1,4 @@
+{ config, ... }:
 {
   home.shellAliases = {
     la = "ls -lah";
@@ -10,6 +11,17 @@
     # Alt+Up inserts the previous command's last argument, like Alt+period.
     ble-bind -m emacs -f 'M-up' insert-last-argument
     ble-bind -m lastarg -f 'M-up' lastarg/next
+
+    # Run commands without submitting the line currently being edited.
+    ble-bind -m emacs -c 'M-left' 'cd -'
+    ble-bind -m emacs -c 'M-t' 'eza --tree'
+
+    # Load fzf through ble.sh, then bind history search with the current input.
+    _ble_contrib_fzf_base=${config.programs.fzf.package}/share/fzf
+    ble-import -d integration/fzf-completion
+    ble-import -d integration/fzf-key-bindings -C '
+      ble-bind -m emacs -x up fzf-history-widget
+    '
 
     bleopt term_index_colors=16
     bleopt term_true_colors=
@@ -78,7 +90,8 @@
 
   programs.fzf = {
     enable = true;
-    enableBashIntegration = true;
+    # ble.sh loads fzf's completion and key bindings from .blerc.
+    enableBashIntegration = false;
     enableFishIntegration = false;
   };
 
