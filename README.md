@@ -42,7 +42,7 @@ Manager state versions retain their existing values.
 
 ## Terminal
 
-Foot replaces Ghostty on workstations. Niri's Mod+T opens Foot with a new tmux
+Foot replaces Ghostty on workstations. Niri's Mod+T opens a Foot 
 session. Use Ctrl+A as the tmux prefix: c creates a window, n/p changes windows,
 h/j/k/l selects panes, % splits horizontally, and " splits vertically. Prefix z
 zooms a pane, d detaches, and `tmux attach` reconnects. Send a literal Ctrl+A with
