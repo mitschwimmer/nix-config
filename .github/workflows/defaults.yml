@@ -28,3 +28,9 @@ jobs:
         run: |
           foot=$(nix build --no-link --print-out-paths --no-update-lock-file --impure --expr '(builtins.getFlake (toString ./.)).inputs.nixpkgs.legacyPackages.x86_64-linux.foot')
           "$foot/bin/foot" --check-config --config=dotfiles/foot/foot.ini
+      - name: Check shared accounts and opt-in desktop profiles
+        run: |
+          nix eval --no-update-lock-file --impure --json --expr '
+            let flake = builtins.getFlake (toString ./.);
+            in import ./tests/profiles.nix { inherit (flake) nixosConfigurations; }
+          '

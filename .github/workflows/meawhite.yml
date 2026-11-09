@@ -5,7 +5,10 @@ on:
     paths:
       - "flake.nix"
       - "flake.lock"
-      - "base.nix"
+      - "profiles/**"
+      - "users/**"
+      - "home/**"
+      - "dotfiles/**"
       - "meawhite/**"
       - ".github/workflows/meawhite.yml"
   push:
@@ -13,7 +16,10 @@ on:
     paths:
       - "flake.nix"
       - "flake.lock"
-      - "base.nix"
+      - "profiles/**"
+      - "users/**"
+      - "home/**"
+      - "dotfiles/**"
       - "meawhite/**"
       - ".github/workflows/meawhite.yml"
   workflow_dispatch:
@@ -69,4 +75,3 @@ jobs:
           MEAWHITE_RECOVERY_PASSPHRASE_FILE: ${{ runner.temp }}/meawhite-ci-passphrase
         run: bash meawhite/build-installer.sh --print-build-logs
       # Do not publish this image: it contains a passphrase known to the CI runner.
-

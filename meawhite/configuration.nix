@@ -1,6 +1,6 @@
 { config, lib, pkgs, modulesPath, ... }:
 {
-  imports = [ ../base.nix ./disko.nix ./talos-vm.nix (modulesPath + "/installer/scan/not-detected.nix") ];
+  imports = [ ./disko.nix ./talos-vm.nix (modulesPath + "/installer/scan/not-detected.nix") ];
   networking.hostName = "meawhite";
   # Bridge the physical LAN only after a guarded remote network migration.
   # Keep the host DHCP reservation by reusing enp129s0's observed MAC.
@@ -28,8 +28,6 @@
   # Use the integrated Intel graphics for the console. No VFIO or inference stack.
   zramSwap.enable = true;
   swapDevices = [ ];
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  time.timeZone = "Europe/Berlin";
   services.openssh = {
     settings = {
       # This headless host is administered through the bundled root public keys.
@@ -47,4 +45,3 @@
     start = true;
   };
 }
-

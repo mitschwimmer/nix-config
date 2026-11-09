@@ -1,8 +1,7 @@
 {
   imports = [
-    ./packages.nix
+    ./cli.nix
     ./shell.nix
-    ./dotfiles.nix
   ];
 
   home = {

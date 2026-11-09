@@ -1,6 +1,20 @@
 { lib, pkgs, ... }:
 {
-  # Shared by workstations and servers; keep desktop services in common.nix.
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
+  time.timeZone = "Europe/Berlin";
+  environment.sessionVariables.EDITOR = "hx";
+  # Keep system-wide Bash and ble.sh support; user preferences live in Home Manager.
+  programs.bash = {
+    enable = true;
+    blesh.enable = true;
+    completion.enable = true;
+  };
+
+
+  # Shared by all installed machines; graphical services are opt-in.
   programs.tmux = {
     enable = lib.mkDefault true;
     shortcut = "a";

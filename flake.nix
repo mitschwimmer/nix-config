@@ -30,38 +30,21 @@
       lib = nixpkgs.lib;
       system = "x86_64-linux";
 
-      makeWorkstation =
-        name:
+      pkgs-unstable = import nixpkgs-unstable {
+        inherit system;
+        config.allowUnfree = true;
+      };
+
+      mkHost = { name, modules ? [ ], specialArgs ? { } }:
         lib.nixosSystem {
           inherit system;
-          specialArgs = {
-            pkgs-unstable = import nixpkgs-unstable {
-              inherit system;
-              config = {
-                allowUnfree = true;
-              };
-            };
-          };
+          specialArgs = { inherit pkgs-unstable; } // specialArgs;
           modules = [
-            ./${name}/configuration.nix
-            ./common.nix
-            ./users.nix
+            ./profiles/base.nix
+            ./users/henner.nix
             home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                backupFileExtension = "hm-backup";
-                extraSpecialArgs = {
-                  pkgs-unstable = import nixpkgs-unstable {
-                    inherit system;
-                    config.allowUnfree = true;
-                  };
-                };
-                users.henner = import ./home/henner;
-              };
-            }
-          ];
+            ./${name}/configuration.nix
+          ] ++ modules;
         };
 
     in
@@ -125,29 +108,31 @@
       };
 
       nixosConfigurations = {
-        meawhite = lib.nixosSystem {
-          inherit system;
+        meawhite = mkHost {
+          name = "meawhite";
           specialArgs = { inherit nixvirt; };
           modules = [
             disko.nixosModules.disko
             lanzaboote.nixosModules.lanzaboote
             nixvirt.nixosModules.default
-            ./meawhite/configuration.nix
           ];
         };
         meawhite-secure = self.nixosConfigurations.meawhite.extendModules {
           modules = [ ./meawhite/secure-boot.nix ];
         };
-        meablack = lib.nixosSystem { inherit system; modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ./meablack/configuration.nix ]; };
+        meablack = mkHost {
+          name = "meablack";
+          modules = [ disko.nixosModules.disko lanzaboote.nixosModules.lanzaboote ];
+        };
         # Use after generating /var/lib/sbctl keys on the installed host.
         # The offline installer continues using the unsigned bootstrap profile.
         meablack-secure = self.nixosConfigurations.meablack.extendModules {
           modules = [ ./meablack/secure-boot.nix ];
         };
-        mearock = makeWorkstation "mearock";
-        meaxps = makeWorkstation "meaxps";
-        meatab = makeWorkstation "meatab";
-        meanovo = makeWorkstation "meanovo";
+        mearock = mkHost { name = "mearock"; modules = [ ./profiles/workstation.nix ]; };
+        meaxps = mkHost { name = "meaxps"; modules = [ ./profiles/workstation.nix ]; };
+        meatab = mkHost { name = "meatab"; modules = [ ./profiles/workstation.nix ]; };
+        meanovo = mkHost { name = "meanovo"; modules = [ ./profiles/workstation.nix ]; };
       };
     };
 }

@@ -1,5 +1,17 @@
 { pkgs, pkgs-unstable, ... }:
 {
+  xdg.configFile = {
+    "foot/foot.ini".source = ../../dotfiles/foot/foot.ini;
+    "niri/config.kdl".source = ../../dotfiles/niri/config.kdl;
+    "quickshell/shell.qml".source = ../../dotfiles/quickshell/shell.qml;
+    "gtk-3.0/bookmarks".source = ../../dotfiles/gtk-3.0/bookmarks;
+  };
+
+  home.shellAliases = {
+    prefer-light = "dconf write /org/gnome/desktop/interface/color-scheme \"'prefer-light'\"";
+    prefer-dark = "dconf write /org/gnome/desktop/interface/color-scheme \"'prefer-dark'\"";
+  };
+
   home.packages =
     (with pkgs; [
       # Desktop environment
@@ -36,21 +48,9 @@
       baobab
       keepassxc
 
-      # CLI
+      # Workstation utilities
       wl-clipboard
       acpi
-      doggo
-      glow
-      git
-      delta
-      dnsutils
-      bat
-      htop
-      helix
-      eza
-      fd
-      ripgrep
-      libqalculate
     ])
     ++ (with pkgs-unstable; [
       enpass
@@ -59,4 +59,3 @@
       godot
     ]);
 }
-

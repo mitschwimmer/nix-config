@@ -1,7 +1,6 @@
 { config, lib, pkgs, modulesPath, ... }:
 {
   imports = [
-    ../base.nix
     ./disko.nix
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
@@ -36,8 +35,6 @@ networking.firewall = {
   zramSwap.enable = true;
   swapDevices = [ ];
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  time.timeZone = "Europe/Berlin";
 
   # This headless host is administered through the bundled root public keys.
   services.openssh.settings.PermitRootLogin = "prohibit-password";
@@ -73,4 +70,3 @@ networking.firewall = {
   hardware.graphics.enable = true;
   system.stateVersion = "26.05";
 }
-

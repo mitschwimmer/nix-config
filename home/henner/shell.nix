@@ -3,8 +3,6 @@
     la = "ls -lah";
     gs = "git status";
     k = "kubecolor";
-    prefer-light = "dconf write /org/gnome/desktop/interface/color-scheme \"'prefer-light'\"";
-    prefer-dark = "dconf write /org/gnome/desktop/interface/color-scheme \"'prefer-dark'\"";
   };
 
   # Use the terminal's ANSI palette, following Foot's Gruvbox theme.
@@ -67,4 +65,3 @@
     enableFishIntegration = false;
   };
 }
-
