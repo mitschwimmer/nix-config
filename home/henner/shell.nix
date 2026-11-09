@@ -10,6 +10,25 @@
     bleopt term_index_colors=16
     bleopt term_true_colors=
     ble-face auto_complete='fg=8,italic'
+
+    # Follow both Foot themes without fixed foreground/background pairs.
+    ble-face region='reverse'
+    ble-face region_insert='reverse'
+    ble-face region_match='underline,bold'
+    ble-face region_target='reverse,bold'
+    ble-face overwrite_mode='reverse'
+
+    ble-face syntax_error='fg=1,underline,bold'
+    ble-face syntax_history_expansion='fg=5,bold'
+
+    ble-face filename_directory_sticky='fg=4,underline,bold'
+    ble-face filename_orphan='fg=1,underline'
+    ble-face filename_setuid='fg=5,underline,bold'
+    ble-face filename_setgid='fg=3,underline,bold'
+    ble-face filename_socket='fg=6,underline'
+    ble-face filename_pipe='fg=2,underline'
+    ble-face filename_character='underline,bold'
+    ble-face filename_block='fg=3,underline'
   '';
 
   programs.bash = {
