@@ -1,6 +1,7 @@
 { config, lib, pkgs, modulesPath, ... }:
 {
   imports = [
+    ../base.nix
     ./disko.nix
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
@@ -38,14 +39,8 @@ networking.firewall = {
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   time.timeZone = "Europe/Berlin";
 
-  services.openssh = {
-    enable = true;
-    settings = {
-      PasswordAuthentication = false;
-      KbdInteractiveAuthentication = false;
-      PermitRootLogin = "prohibit-password";
-    };
-  };
+  # This headless host is administered through the bundled root public keys.
+  services.openssh.settings.PermitRootLogin = "prohibit-password";
 
   # Reviewed public keys are bundled, so installation needs no network access.
   services.openssh.settings.AuthorizedKeysFile = "/etc/ssh/authorized_keys.d/%u";
@@ -78,3 +73,4 @@ networking.firewall = {
   hardware.graphics.enable = true;
   system.stateVersion = "26.05";
 }
+

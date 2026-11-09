@@ -7,7 +7,7 @@
     prefer-dark = "dconf write /org/gnome/desktop/interface/color-scheme \"'prefer-dark'\"";
   };
 
-  # Use the terminal's ANSI palette, following Ghostty's light/dark Gruvbox theme.
+  # Use the terminal's ANSI palette, following Foot's Gruvbox theme.
   home.file.".blerc".text = ''
     bleopt term_index_colors=16
     bleopt term_true_colors=
@@ -67,3 +67,4 @@
     enableFishIntegration = false;
   };
 }
+

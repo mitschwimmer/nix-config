@@ -9,6 +9,8 @@ let
   };
 in
 {
+  imports = [ ./base.nix ];
+
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.systemd-boot.consoleMode = "max";
@@ -39,16 +41,6 @@ in
   '';
 
   services.fwupd.enable = true;
-  services.openssh = {
-    enable = true;
-    settings = {
-      PasswordAuthentication = false;
-      KbdInteractiveAuthentication = false;
-      PermitRootLogin = "no";
-      MaxAuthTries = 3;
-      PerSourcePenalties = "crash:3600s authfail:3600s max:86400s";
-    };
-  };
 
   services.avahi = {
     enable = true;
@@ -114,3 +106,4 @@ in
     incus
   ];
 }
+
