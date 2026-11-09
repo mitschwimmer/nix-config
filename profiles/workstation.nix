@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, pkgs-unstable, ... }:
 let
   resolvedHook = "${pkgs.update-systemd-resolved}/libexec/openvpn/update-systemd-resolved";
 
@@ -9,7 +9,11 @@ let
   };
 in
 {
-  imports = [ ./base.nix ];
+  users.users.henner.extraGroups = [ "networkmanager" ];
+  home-manager = {
+    extraSpecialArgs = { inherit pkgs-unstable; };
+    users.henner.imports = [ ../home/henner/desktop.nix ];
+  };
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -17,13 +21,8 @@ in
   boot.loader.timeout = 0;
   boot.plymouth.enable = true;
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
   nixpkgs.config.allowUnfree = true;
 
-  time.timeZone = "Europe/Berlin";
   i18n.defaultLocale = "de_DE.UTF-8";
   console.useXkbConfig = true;
 
@@ -90,14 +89,6 @@ in
     noto-fonts-color-emoji
   ];
 
-  # Keep system-wide Bash and ble.sh support; user preferences live in Home Manager.
-  programs.bash = {
-    enable = true;
-    blesh.enable = true;
-    completion.enable = true;
-  };
-
-  environment.sessionVariables.EDITOR = "hx";
   environment.systemPackages = with pkgs; [
     nixfmt
     wget
@@ -106,4 +97,3 @@ in
     incus
   ];
 }
-

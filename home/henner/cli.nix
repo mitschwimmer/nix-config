@@ -1,13 +1,13 @@
-{ ... }:
+{ pkgs, ... }:
 {
-  # Keep application configuration files under version control.
+  home.packages = with pkgs; [
+    doggo glow git delta dnsutils bat htop helix eza fd ripgrep libqalculate
+  ];
+
+  # Terminal configuration shared by workstations and servers.
   xdg.configFile = {
-    "foot/foot.ini".source = ../../dotfiles/foot/foot.ini;
     "helix/config.toml".source = ../../dotfiles/helix/config.toml;
     "helix/languages.toml".source = ../../dotfiles/helix/languages.toml;
-    "niri/config.kdl".source = ../../dotfiles/niri/config.kdl;
-    "quickshell/shell.qml".source = ../../dotfiles/quickshell/shell.qml;
-    "gtk-3.0/bookmarks".source = ../../dotfiles/gtk-3.0/bookmarks;
 
     # Git's includeIf entries in config reference these exact paths.
     "git/gitconfig-archaic".source = ../../dotfiles/git/gitconfig-archaic;
@@ -19,4 +19,3 @@
   # changing conditional identity selection.
   home.file.".gitconfig".source = ../../dotfiles/git/config;
 }
-
