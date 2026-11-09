@@ -50,10 +50,10 @@ direction, c creates a new window, and n/p changes windows. Window and pane
 indices begin at 1. Prefix ? shows tmux's built-in keybinding help, z zooms a
 pane, and d detaches; `tmux attach` reconnects.
 
-The status bar shows the tmux server's hostname and numbered windows, with the
-active window highlighted using rounded Powerline glyphs from the terminal's
-Nerd Font. It follows the terminal's default foreground and background colors,
-without a clock, date or plugin theme. Restart existing tmux servers after
+The status bar centers the tmux server's hostname and numbered windows as one
+group, with the active window highlighted using rounded Powerline glyphs from
+the terminal's Nerd Font. It follows the terminal's default foreground and
+background colors, without a clock, date or plugin theme. Restart existing tmux servers after
 deploying the prefix change; Home Manager's default Ctrl+B binding is only
 initialized automatically when tmux starts.
 
