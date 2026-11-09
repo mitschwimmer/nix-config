@@ -51,9 +51,9 @@
     # Load fzf through ble.sh, then bind history search with the current input.
     _ble_contrib_fzf_base=${config.programs.fzf.package}/share/fzf
     ble-import -d integration/fzf-completion
-    ble-import -d integration/fzf-key-bindings -C '
-      ble-bind -m emacs -x up fzf-history-widget
-    '
+    # Load key bindings synchronously: the pinned ble.sh has no -C option.
+    ble-import integration/fzf-key-bindings
+    ble-bind -m emacs -x up fzf-history-widget
 
     bleopt term_index_colors=16
     bleopt term_true_colors=
