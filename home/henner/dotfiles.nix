@@ -1,8 +1,8 @@
 { ... }:
 {
-  # Preserve the original application configurations exactly during migration.
+  # Keep application configuration files under version control.
   xdg.configFile = {
-    "ghostty/config".source = ../../dotfiles/ghostty/config;
+    "foot/foot.ini".source = ../../dotfiles/foot/foot.ini;
     "helix/config.toml".source = ../../dotfiles/helix/config.toml;
     "helix/languages.toml".source = ../../dotfiles/helix/languages.toml;
     "niri/config.kdl".source = ../../dotfiles/niri/config.kdl;
@@ -19,3 +19,4 @@
   # changing conditional identity selection.
   home.file.".gitconfig".source = ../../dotfiles/git/config;
 }
+

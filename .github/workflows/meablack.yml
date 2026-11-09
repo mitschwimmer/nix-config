@@ -5,6 +5,7 @@ on:
     paths:
       - "flake.nix"
       - "flake.lock"
+      - "base.nix"
       - "meablack/**"
       - ".github/workflows/meablack.yml"
   push:
@@ -12,6 +13,7 @@ on:
     paths:
       - "flake.nix"
       - "flake.lock"
+      - "base.nix"
       - "meablack/**"
       - ".github/workflows/meablack.yml"
   workflow_dispatch:
@@ -45,3 +47,4 @@ jobs:
           MEABLACK_RECOVERY_PASSPHRASE_FILE: ${{ runner.temp }}/meablack-ci-passphrase
         run: bash meablack/build-installer.sh --print-build-logs
       # Do not publish this image: it contains a passphrase known to the CI runner.
+

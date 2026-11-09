@@ -3,6 +3,7 @@
   home.packages =
     (with pkgs; [
       # Desktop environment
+      foot
       fuzzel
       pavucontrol
       xwayland-satellite
@@ -53,9 +54,9 @@
     ])
     ++ (with pkgs-unstable; [
       enpass
-      ghostty
       libreoffice
       gthumb
       godot
     ]);
 }
+

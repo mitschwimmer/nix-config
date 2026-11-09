@@ -1,6 +1,6 @@
 { config, lib, pkgs, modulesPath, ... }:
 {
-  imports = [ ./disko.nix ./talos-vm.nix (modulesPath + "/installer/scan/not-detected.nix") ];
+  imports = [ ../base.nix ./disko.nix ./talos-vm.nix (modulesPath + "/installer/scan/not-detected.nix") ];
   networking.hostName = "meawhite";
   # Bridge the physical LAN only after a guarded remote network migration.
   # Keep the host DHCP reservation by reusing enp129s0's observed MAC.
@@ -31,10 +31,8 @@
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   time.timeZone = "Europe/Berlin";
   services.openssh = {
-    enable = true;
     settings = {
-      PasswordAuthentication = false;
-      KbdInteractiveAuthentication = false;
+      # This headless host is administered through the bundled root public keys.
       PermitRootLogin = "prohibit-password";
       AuthorizedKeysFile = "/etc/ssh/authorized_keys.d/%u";
     };
@@ -49,3 +47,4 @@
     start = true;
   };
 }
+
