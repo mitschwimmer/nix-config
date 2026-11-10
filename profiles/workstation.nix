@@ -54,6 +54,7 @@ in
 
   services.displayManager = {
     ly.enable = true;
+    ly.settings.session_log = "null";
     defaultSession = "niri";
     autoLogin = {
       enable = true;
