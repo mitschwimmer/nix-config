@@ -46,6 +46,17 @@ test('stacked monitors retain both vertical edges and empty layouts are valid', 
     assert.deepEqual(segments([]), []);
 });
 
+test('Quickshell battery ratios preserve full and partial charge', () => {
+    assert.equal(logic.batteryLevel(1), 1);
+    assert.equal(Math.round(logic.batteryLevel(1) * 100), 100);
+    assert.equal(logic.batteryLevel(0.78), 0.78);
+    assert.equal(Math.round(logic.batteryLevel(0.78) * 100), 78);
+    assert.equal(logic.batteryLevel(0), 0);
+    assert.equal(logic.batteryLevel(-0.1), 0);
+    assert.equal(logic.batteryLevel(1.1), 1);
+    for (const value of [NaN, Infinity, undefined]) assert.equal(logic.batteryLevel(value), 0);
+});
+
 test('battery time estimates omit unknown values and format minutes', () => {
     for (const seconds of [0, -1, NaN, Infinity]) assert.equal(logic.duration(seconds), '');
     assert.equal(logic.duration(1), '1 min');

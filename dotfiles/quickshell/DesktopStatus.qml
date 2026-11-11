@@ -10,7 +10,7 @@ Scope {
 
     readonly property var battery: UPower.displayDevice
     readonly property bool hasBattery: battery.ready && battery.isLaptopBattery && battery.isPresent
-    readonly property real batteryLevel: hasBattery ? Math.max(0, Math.min(1, battery.percentage / 100)) : 0
+    readonly property real batteryLevel: hasBattery ? Logic.batteryLevel(battery.percentage) : 0
     readonly property string batteryValue: hasBattery ? Math.round(batteryLevel * 100) + "%" : "AC power"
     readonly property string batteryDetail: {
         if (!hasBattery) return "No system battery"

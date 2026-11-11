@@ -31,7 +31,7 @@ PanelWindow {
         x: root.sidebar.side === "left"
             ? -width * (1 - root.sidebar.progress)
             : parent.width - width * root.sidebar.progress
-        color: root.palette.surface
+        color: root.palette.dark ? "#000000" : root.palette.surface
         clip: true
 
         Rectangle {

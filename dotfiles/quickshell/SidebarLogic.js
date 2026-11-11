@@ -37,6 +37,11 @@ function edgeSegments(screens) {
     return result
 }
 
+// Quickshell normalizes UPower's 0..100 D-Bus percentage to a 0..1 ratio.
+function batteryLevel(percentage) {
+    return Number.isFinite(percentage) ? Math.max(0, Math.min(1, percentage)) : 0
+}
+
 function duration(seconds) {
     if (!Number.isFinite(seconds) || seconds <= 0)
         return ""

@@ -38,7 +38,9 @@ devices. Missing hardware and disabled radios have explicit fallback states.
 The drawer and wallpaper share a 220 ms animation. Only the wallpaper translates;
 application windows retain their size and position. Wallpaper rotation,
 crossfades and occupied-workspace effects continue as before. The drawer uses the
-existing light/dark palette and disappears completely when closed.
+existing light/dark palette, with a true-black (`#000000`) drawer background in
+dark mode, and disappears completely when closed. Quickshell exposes battery
+charge as a 0–1 ratio; the displayed percentage multiplies it by 100 once.
 
 Leaving the drawer closes it after 350 ms. A stationary pointer also closes it
 after 15 seconds; a pointer parked on the trigger must leave the edge before
