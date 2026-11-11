@@ -1,4 +1,4 @@
-import QtQml
+import QtQuick
 
 QtObject {
     readonly property color surface: "#0E0E0E"
