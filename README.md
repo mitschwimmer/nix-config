@@ -27,6 +27,37 @@ Add graphical settings to the workstation/desktop modules. Keep workload tools
 and services in their host configuration. Unstable Home Manager packages are
 passed only to the workstation configuration.
 
+## Workstation login
+
+The workstation profile uses SDDM (Wayland greeter via Weston) for both
+`meanovo` and `meatab`. Niri remains the default session, and automatic
+login is disabled. The SDDM Wayland greeter is still experimental upstream.
+The custom login theme is a later, separate change.
+
+Before activating, verify the `henner` account password works for a local
+login and that another TTY (Ctrl+Alt+F2 or F3) and SSH recovery are available.
+Evaluate each workstation before deployment:
+
+```sh
+nix eval --no-update-lock-file --raw .#nixosConfigurations.meanovo.config.system.build.toplevel.drvPath
+nix eval --no-update-lock-file --raw .#nixosConfigurations.meatab.config.system.build.toplevel.drvPath
+```
+
+Switch the display manager **at reboot**, not inside the running graphical
+session. For the host being tested:
+
+```sh
+sudo nixos-rebuild boot --flake .#meanovo
+sudo reboot
+```
+
+At the greeter, select Niri if needed, enter the existing account password,
+and test logout/relogin. If the greeter fails, switch to a text TTY, inspect
+`journalctl -b -u display-manager`, select the previous system generation
+from the boot menu (hold Space while booting if the menu is hidden), or boot
+a previous generation with `sudo nixos-rebuild boot --rollback` and reboot.
+Only then migrate the second workstation.
+
 ## Account migration
 
 Henner's shared public keys are in `users/henner/authorized_keys`, initially

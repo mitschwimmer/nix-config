@@ -54,12 +54,13 @@ in
   xdg.portal.xdgOpenUsePortal = true;
 
   services.displayManager = {
-    ly.enable = true;
-    ly.settings.session_log = "null";
     defaultSession = "niri";
-    autoLogin = {
+    autoLogin.enable = false;
+    sddm = {
       enable = true;
-      user = "henner";
+      # Prefer a Wayland greeter on a Niri workstation; test before theming.
+      wayland.enable = true;
+      wayland.compositor = "weston";
     };
   };
 
