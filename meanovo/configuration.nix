@@ -13,7 +13,11 @@
   # The later KMS/greeter mode may still differ; test on the real display.
   boot.loader.systemd-boot.consoleMode = lib.mkForce "keep";
 
+  # Keep local recovery and diagnostics tools available before Secure Boot.
   environment.systemPackages = with pkgs; [
-
+    cryptsetup
+    sbctl
+    tpm2-tools
+    pciutils
   ];
 }
