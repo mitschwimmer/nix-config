@@ -145,8 +145,7 @@ The limit takes effect during the next **successful** bootloader installation,
 not from evaluating the flake, and does not delete the underlying NixOS system
 generations or store paths.
 
-After a signed boot has been verified, merge the retention setting and install
-the new default with `sudo nixos-rebuild boot --flake .#meanovo`. Verify
+After a signed boot has been verified, install the new default with `sudo nixos-rebuild boot --flake .#meanovo`. Verify
 `sudo bootctl list --no-pager` and `sudo sbctl verify` before rebooting.
 Old unsigned Type #1 `.conf` entries may still exist and can refer to
 nonexistent kernel/initrd files; do not treat them as bootable recovery entries,
