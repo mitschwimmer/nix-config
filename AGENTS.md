@@ -12,6 +12,7 @@ All outputs target x86_64-linux.
 | Host composition or inputs | `flake.nix` | Selected host's `configuration.nix`, `flake.lock` only for dependency work |
 | Shared NixOS defaults or SSH | `profiles/base.nix` | `users/henner.nix`, selected host's overrides |
 | Desktop system services, VPN or login | `profiles/workstation.nix` | `home/henner/desktop.nix` |
+| meanovo Secure Boot, TPM or boot display modes | `meanovo/README.md` | `meanovo/secure-boot.nix`, `meanovo/hardware-configuration.nix` |
 | Account or shared SSH keys | `users/henner.nix` | `users/henner/authorized_keys` |
 | CLI tools, Git or Helix | `home/henner/cli.nix` | Referenced files in `dotfiles/` |
 | Bash, ble.sh or shell integration | `home/henner/shell.nix` | `profiles/base.nix` for system Bash |

@@ -114,7 +114,17 @@
           modules = [ ./meablack/secure-boot.nix ];
         };
         meatab = mkHost { name = "meatab"; modules = [ ./profiles/workstation.nix ]; };
-        meanovo = mkHost { name = "meanovo"; modules = [ ./profiles/workstation.nix ]; };
+        meanovo = mkHost {
+          name = "meanovo";
+          modules = [
+            ./profiles/workstation.nix
+            lanzaboote.nixosModules.lanzaboote
+          ];
+        };
+        # Opt-in: only after backing up LUKS recovery material and Secure Boot keys.
+        meanovo-secure = self.nixosConfigurations.meanovo.extendModules {
+          modules = [ ./meanovo/secure-boot.nix ];
+        };
       };
     };
 }

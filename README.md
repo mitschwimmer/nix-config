@@ -1,8 +1,9 @@
 # NixOS configuration
 
 For targeted exploration and validation commands, start with [AGENTS.md](AGENTS.md).
-Host installation and recovery procedures are in [meablack/README.md](meablack/README.md)
-and [meawhite/README.md](meawhite/README.md). The Kubernetes MicroVM foundation
+Host installation and recovery procedures are in [meablack/README.md](meablack/README.md),
+[meawhite/README.md](meawhite/README.md), and the staged workstation
+[meanovo boot runbook](meanovo/README.md). The Kubernetes MicroVM foundation
 and implementation status are in [docs/architecture.md](docs/architecture.md);
 start deployment with [docs/bootstrap.md](docs/bootstrap.md).
 
