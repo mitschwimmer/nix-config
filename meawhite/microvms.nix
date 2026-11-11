@@ -1,10 +1,10 @@
 { ... }:
 {
   # br0 already connects enp129s0 to the LAN and retains the host's DHCP MAC.
-  # Enable k8s-test first; see docs/bootstrap.md before activating any guests.
+  # First staged bootstrap: only k8s-cp-01. See docs/bootstrap.md.
   services.kubernetesMicrovms = {
-    enable = false;
+    enable = true;
     bridge = "br0";
-    guests = [ ];
+    guests = [ "k8s-cp-01" ];
   };
 }
