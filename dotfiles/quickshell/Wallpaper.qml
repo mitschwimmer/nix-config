@@ -63,6 +63,7 @@ Scope {
 
         wallpaperA = wallpaperOrder[0]
         wallpaperB = wallpaperOrder[wallpaperOrder.length > 1 ? 1 : 0]
+        console.info("Wallpaper selected:", wallpaperA)
     }
 
     function advanceWallpaper() {
@@ -80,6 +81,7 @@ Scope {
 
         wallpaperIndex = nextIndex
         showB = !showB
+        console.info("Wallpaper selected:", showB ? wallpaperB : wallpaperA)
         preloadTimer.restart()
     }
 
@@ -175,6 +177,11 @@ Scope {
                     cache: true
                     opacity: root.showB ? 0 : 1
 
+                    onStatusChanged: {
+                        if (status === Image.Error)
+                            console.warn("Wallpaper failed:", source, "output:", wallpaper.modelData.name, "layer: A")
+                    }
+
                     Behavior on opacity {
                         NumberAnimation {
                             duration: root.crossfadeDuration
@@ -190,6 +197,11 @@ Scope {
                     asynchronous: true
                     cache: true
                     opacity: root.showB ? 1 : 0
+
+                    onStatusChanged: {
+                        if (status === Image.Error)
+                            console.warn("Wallpaper failed:", source, "output:", wallpaper.modelData.name, "layer: B")
+                    }
 
                     Behavior on opacity {
                         NumberAnimation {
