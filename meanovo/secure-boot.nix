@@ -1,6 +1,6 @@
 { lib, ... }:
 {
-  # Switch to this variant only after provisioning and backing up keys.
+  # The secure default requires provisioned and backed-up signing keys.
   # See meanovo/README.md; never enroll firmware keys automatically.
   boot.loader.systemd-boot.enable = lib.mkForce false;
   boot.lanzaboote = {

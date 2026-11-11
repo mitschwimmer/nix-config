@@ -114,16 +114,23 @@
           modules = [ ./meablack/secure-boot.nix ];
         };
         meatab = mkHost { name = "meatab"; modules = [ ./profiles/workstation.nix ]; };
+        # The installed laptop has successfully booted signed UKIs with
+        # Secure Boot enforced and TPM2 unlocking both LUKS volumes.
         meanovo = mkHost {
           name = "meanovo";
           modules = [
             ./profiles/workstation.nix
             lanzaboote.nixosModules.lanzaboote
+            ./meanovo/secure-boot.nix
           ];
         };
-        # Opt-in: only after backing up LUKS recovery material and Secure Boot keys.
-        meanovo-secure = self.nixosConfigurations.meanovo.extendModules {
-          modules = [ ./meanovo/secure-boot.nix ];
+        # Keep previous rebuild commands functional during the transition.
+        meanovo-secure = self.nixosConfigurations.meanovo;
+        # Explicit unsigned recovery profile. Firmware Secure Boot must be
+        # disabled before attempting to boot artifacts from this profile.
+        meanovo-legacy = mkHost {
+          name = "meanovo";
+          modules = [ ./profiles/workstation.nix ];
         };
       };
     };

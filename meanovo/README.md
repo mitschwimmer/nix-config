@@ -1,8 +1,16 @@
 # meanovo: staged boot, Secure Boot and TPM2 unlock
 
-The normal `meanovo` flake output keeps the existing systemd-boot and passphrase
-unlock. The separate `meanovo-secure` output uses Lanzaboote with signed
-boot artifacts and enables systemd TPM2 unlock for **both** encrypted devices:
+The normal `meanovo` flake output uses Lanzaboote with signed boot artifacts
+and enables systemd TPM2 unlock for **both** encrypted devices.
+`meanovo-secure` is an alias for the same secure configuration, retained for
+compatibility with earlier deployment commands.
+
+`meanovo-legacy` is an explicitly **unsigned** systemd-boot recovery profile.
+Do not deploy it as a normal fallback: installing it replaces the signed boot
+path, and its boot artifacts cannot run while firmware Secure Boot enforcement
+is enabled. To recover via this profile, first disable Secure Boot in firmware
+and use verified local recovery media and existing LUKS credentials.
+Never remove the original passphrase slots:
 
 | Mapping | LUKS block device |
 | --- | --- |
@@ -16,8 +24,10 @@ secrets or modify firmware Secure Boot keys automatically.
 
 ## Stage 0 — verify prerequisites and recovery
 
-**Test SDDM separately first.** Changing the display manager and bootloader
-at once makes it harder to diagnose an unsuccessful first boot.
+For a fresh installation, **test SDDM separately first**. Changing the
+display manager and bootloader at once makes it harder to diagnose boot
+failures. On the already migrated laptop, preserve the verified signed boot
+path and offline backups.
 
 At the physical machine (with a trusted rescue USB available):
 
@@ -56,8 +66,8 @@ and the laptop firmware manual. Do this only with recovery-console access.
    `/var/lib/sbctl` securely outside the machine; never commit it to Git.
 2. Evaluate and prepare the signed generation from this checkout:
    ```sh
-   nix eval --no-update-lock-file --raw .#nixosConfigurations.meanovo-secure.config.system.build.toplevel.drvPath
-   sudo nixos-rebuild boot --flake .#meanovo-secure
+   nix eval --no-update-lock-file --raw .#nixosConfigurations.meanovo.config.system.build.toplevel.drvPath
+   sudo nixos-rebuild boot --flake .#meanovo
    sudo sbctl verify
    ```
    Building signed artifacts needs the local private signing keys.
@@ -127,27 +137,46 @@ output mode rather than forcing a resolution without hardware evidence.
 
 ## Boot menu retention
 
-Both `meanovo` (systemd-boot) and `meanovo-secure` (Lanzaboote) retain
-at most **four** NixOS generations in the boot menu. Lanzaboote inherits
-`boot.loader.systemd-boot.configurationLimit`. The limit is applied at
-the next **successful** bootloader installation, not by evaluating the flake.
-This does not delete NixOS generations or store paths from disk.
+`meanovo` (Lanzaboote) and `meanovo-legacy` (unsigned systemd-boot)
+retain at most **four** NixOS generations in the boot menu. `meanovo-secure`
+is an alias for `meanovo`. Lanzaboote inherits
+`boot.loader.systemd-boot.configurationLimit` from the host configuration.
+The limit takes effect during the next **successful** bootloader installation,
+not from evaluating the flake, and does not delete the underlying NixOS system
+generations or store paths.
 
-Do not apply this retention reduction while the signed bootloader is in a
-failed or partially installed state. First create and back up the local sbctl
-signing keys, verify an intact known-good boot path and an external rescue
-option, and complete a successful bootloader installation. Confirm the remaining
-entries with `sudo bootctl list` before rebooting; do not depend solely on
-one of the old generations that the limit may remove.
+After a signed boot has been verified, install the new default with `sudo nixos-rebuild boot --flake .#meanovo`. Verify
+`sudo bootctl list --no-pager` and `sudo sbctl verify` before rebooting.
+Old unsigned Type #1 `.conf` entries may still exist and can refer to
+nonexistent kernel/initrd files; do not treat them as bootable recovery entries,
+and do not delete signed UKIs manually.
 
 ## Recovery and validation
 
-Before activating this variant:
+Before rebuilding, evaluate the secure default and the explicitly unsigned
+recovery profile (the `meanovo-secure` alias is identical to `meanovo`):
 
 ```sh
 nix eval --no-update-lock-file --raw .#nixosConfigurations.meanovo.config.system.build.toplevel.drvPath
-nix eval --no-update-lock-file --raw .#nixosConfigurations.meanovo-secure.config.system.build.toplevel.drvPath
+nix eval --no-update-lock-file --raw .#nixosConfigurations.meanovo-legacy.config.system.build.toplevel.drvPath
 ```
+
+With verified signing-key backups, LUKS recovery credentials and external
+recovery access, update the normal signed boot installation:
+
+```sh
+sudo nixos-rebuild boot --flake .#meanovo
+sudo bootctl list --no-pager
+sudo sbctl verify
+```
+
+On reboot confirm `sudo sbctl status` still reports Secure Boot enabled,
+`sudo bootctl status` reports the signed Lanzaboote UKI as the current entry,
+and TPM2 automatically opens both `encrypted_root` and `encrypted_swap`.
+If TPM2 recovery fails after a firmware Secure Boot policy change, use the
+retained LUKS passphrase and re-enroll only after verifying the policy.
+Do not run `nixos-rebuild boot --flake .#meanovo-legacy` while expecting
+Secure Boot to stay enabled; it is an exceptional unsigned recovery operation.
 
 The repository's automated CI checks syntax only. Successful evaluation or
 signing does not prove the firmware accepts the keys, the TPM policy unlocks

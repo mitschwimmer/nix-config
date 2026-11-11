@@ -13,10 +13,10 @@
   # Preserve the firmware's chosen GOP mode instead of switching to "max".
   # The later KMS/greeter mode may still differ; test on the real display.
   boot.loader.systemd-boot.consoleMode = lib.mkForce "keep";
-  # Also limits the inherited Lanzaboote boot menu on meanovo-secure.
+  # The secure default and explicit legacy recovery both keep four entries.
   boot.loader.systemd-boot.configurationLimit = 4;
 
-  # Keep local recovery and diagnostics tools available before Secure Boot.
+  # Keep signing, recovery and diagnostic tools available locally.
   environment.systemPackages = with pkgs; [
     cryptsetup
     sbctl
