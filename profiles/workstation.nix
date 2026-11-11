@@ -53,15 +53,17 @@ in
   security.polkit.enable = true;
   xdg.portal.xdgOpenUsePortal = true;
 
-  services.displayManager = {
-    ly.enable = true;
-    ly.settings.session_log = "null";
-    defaultSession = "niri";
-    autoLogin = {
-      enable = true;
-      user = "henner";
+  # greetd handles authentication; Cage hosts the Quickshell login surface.
+  services.greetd = {
+    enable = true;
+    settings.default_session = {
+      user = "greeter";
+      command = "${pkgs.cage}/bin/cage -s -- ${pkgs.quickshell}/bin/quickshell -p ${../../dotfiles/quickshell/greeter.qml}";
     };
   };
+
+  # Used by the Wayland session locker inside the user Quickshell instance.
+  security.pam.services.quickshell = { };
 
   # Allow user processes to request realtime scheduling.
   security.rtkit.enable = true;

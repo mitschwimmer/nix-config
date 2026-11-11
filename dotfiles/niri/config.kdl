@@ -127,7 +127,8 @@ binds {
     Mod+T hotkey-overlay-title="Open a Terminal" { spawn "foot"; }
     Mod+Shift+T hotkey-overlay-title="Toggle light/dark appearance" { spawn "qs" "-c" "workstation" "ipc" "call" "theme" "toggle"; }
     Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
-    Super+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock" "-Kc000000"; }
+    Super+L hotkey-overlay-title="Lock the Screen: Quickshell" { spawn "qs" "-c" "workstation" "ipc" "call" "lock" "lock"; }
+    Super+Alt+L hotkey-overlay-title="Emergency lock: swaylock" { spawn "swaylock" "-Kc000000"; }
 
     XF86AudioRaiseVolume allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "volumeUp"; }
     XF86AudioLowerVolume allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "volumeDown"; }

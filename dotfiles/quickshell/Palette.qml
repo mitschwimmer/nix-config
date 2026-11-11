@@ -7,6 +7,7 @@ Scope {
 
     readonly property string colorSchemeKey: "/org/gnome/desktop/interface/color-scheme"
     property bool dark: true
+    property bool syncWithDesktop: true
 
     readonly property color surface: dark ? "#0E0E0E" : "#FFFFFF"
     readonly property color tile: dark ? "#1A1A1A" : "#F1F1F1"
@@ -25,7 +26,7 @@ Scope {
     }
 
     function refresh() {
-        if (!schemeRead.running)
+        if (syncWithDesktop && !schemeRead.running)
             schemeRead.running = true
     }
 
@@ -36,11 +37,11 @@ Scope {
         function dark(): void { root.setDark(true) }
     }
 
-    // Follow the same setting that GTK applications and the existing aliases use.
+    // The greeter has no desktop dconf session; use the dark palette there.
     Process {
         id: schemeRead
         command: ["dconf", "read", root.colorSchemeKey]
-        running: true
+        running: root.syncWithDesktop
         stdout: SplitParser {
             onRead: line => root.dark = !line.includes("prefer-light")
         }
@@ -48,7 +49,7 @@ Scope {
 
     Process {
         command: ["dconf", "watch", root.colorSchemeKey]
-        running: true
+        running: root.syncWithDesktop
         stdout: SplitParser {
             onRead: line => root.refresh()
         }

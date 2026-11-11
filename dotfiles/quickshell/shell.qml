@@ -8,4 +8,5 @@ Scope {
     Notifications { niriState: niri; palette: palette }
     Osd { niriState: niri; palette: palette }
     Polkit { palette: palette }
+    Lock { palette: palette }
 }

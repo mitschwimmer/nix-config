@@ -15,7 +15,11 @@ wallpaper, notification popups and an on-screen display, using the palette in
 - `OsdWindow.qml`: visual on-screen display.
 - `Palette.qml`: light/dark appearance synchronized with the desktop setting.
 - `Polkit.qml`: system authentication agent.
-- `PolkitDialog.qml`: authentication window and PAM responses.
+- `PolkitDialog.qml`: Polkit action authentication.
+- `AuthPanel.qml`: common login and lock credential UI.
+- `greeter.qml`: greetd login controller, hosted by Cage on tty1.
+- `Lock.qml`: Wayland session lock and PAM authentication.
+- `LockSurface.qml`: per-monitor locked display.
 
 Notifications and the OSD appear on the focused monitor, or the first monitor
 until Niri reports one. No permanent bar or notification history is kept.
@@ -46,7 +50,30 @@ pkexec /run/current-system/sw/bin/id
 Cancel the prompt once, then retry and authenticate. Also verify that wrong
 passwords, keyboard focus and Enter-to-submit work.
 
-The login display manager is still Ly; Quickshell runs inside the Niri session.
+## Login and screen lock
+
+Ly and autologin are replaced by greetd. Cage hosts the independent
+`greeter.qml` entry point from the Nix store; it uses Quickshell's greetd
+API to authenticate `henner` and then launches `niri-session`.
+The greeter always uses the dark palette, as the greeter account cannot read
+the logged-in user's dconf preferences.
+
+`Super+L` locks the running Niri session using Quickshell's Wayland
+session-lock protocol and the dedicated NixOS `quickshell` PAM service.
+The greeter and locker use the same `AuthPanel.qml`, but never share
+authentication state or credentials.
+
+`Super+Alt+L` still starts Swaylock as an alternative until the new locker
+is confirmed working.
+
+**Rollout:** evaluate `meanovo` and `meatab` before switching. Verify that
+the password works for both greeter login and `Super+L` unlock before
+relying on this setup. Do not kill/reload Quickshell while locked: a crashed
+lock client intentionally leaves the Wayland session locked. SSH/TTY recovery
+may require ending the Niri session. Cage's `-s` allows switching VTs.
+
+Use `journalctl -u greetd -b` to inspect login failures. The greeter has
+no auto-login and no session selector; it launches Niri for `henner`.
 
 ## Manual checks
 
@@ -67,4 +94,4 @@ Check keyboard volume, microphone, brightness and media keys, notification
 actions and close buttons, multiple monitors, wallpaper dimming on occupied
 workspaces, rotation and crossfades.
 
-The lock screen and launcher remain Swaylock and Fuzzel.
+The application launcher remains Fuzzel; Swaylock is retained as a fallback.
