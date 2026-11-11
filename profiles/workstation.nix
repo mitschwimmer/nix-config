@@ -50,6 +50,7 @@ in
   services.flatpak.enable = true;
 
   programs.niri.enable = true;
+  security.polkit.enable = true;
   xdg.portal.xdgOpenUsePortal = true;
 
   services.displayManager = {
