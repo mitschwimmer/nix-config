@@ -2,14 +2,13 @@
 let
   inherit (flake.inputs.nixpkgs) lib;
   nodes = import ../kubernetes/nodes.nix;
-  cluster = lib.filterAttrs (_: n: n.role != "test") nodes;
   configs = flake.nixosConfigurations;
   guests = lib.mapAttrs (name: _: configs.${name}.config) nodes;
   enabledHost = name: (configs.${name}.extendModules {
     modules = [ {
       services.kubernetesMicrovms = {
         enable = lib.mkForce true;
-        guests = lib.mkForce (builtins.attrNames (lib.filterAttrs (_: n: n.host == name) cluster));
+        guests = lib.mkForce (builtins.attrNames (lib.filterAttrs (_: n: n.host == name) nodes));
       } // lib.optionalAttrs (name == "meablack") {
         # Evaluation fixture only: not deployment values or a real NIC.
         uplink = lib.mkForce "fixture0";
@@ -22,9 +21,9 @@ let
 in
 {
   topology = check "five nodes, three servers, two servers on meawhite"
-    (builtins.length (builtins.attrNames cluster) == 5
-      && builtins.length (lib.filter (n: n.role == "server") (builtins.attrValues cluster)) == 3
-      && builtins.length (lib.filter (n: n.role == "server" && n.host == "meawhite") (builtins.attrValues cluster)) == 2);
+    (builtins.length (builtins.attrNames nodes) == 5
+      && builtins.length (lib.filter (n: n.role == "server") (builtins.attrValues nodes)) == 3
+      && builtins.length (lib.filter (n: n.role == "server" && n.host == "meawhite") (builtins.attrValues nodes)) == 2);
   identity = check "unique stable MACs, vsock CIDs and valid TAP names"
     (builtins.length (lib.unique (map (n: n.mac) (builtins.attrValues nodes))) == builtins.length (builtins.attrNames nodes)
       && builtins.length (lib.unique (map (n: n.vsockCid) (builtins.attrValues nodes))) == builtins.length (builtins.attrNames nodes)
