@@ -61,29 +61,48 @@
         ble/widget/.EDIT_COMMAND fzf-history-widget
       fi
     }
+    # Use Up for multiline navigation or fzf history on a single line.
     ble-bind -m emacs -f up dotfiles/up-or-history
 
+    # Limit indexed colors to the terminal's 16-color ANSI palette.
     bleopt term_index_colors=16
+    # Disable RGB colors so highlighting follows the terminal theme.
     bleopt term_true_colors=
+    # Show inline completion suggestions in bright black (gray) italics.
     ble-face auto_complete='fg=8,italic'
 
     # Follow both Foot themes without fixed foreground/background pairs.
+    # Highlight selected text by swapping foreground and background.
     ble-face region='reverse'
+    # Highlight inserted history arguments by reversing their colors.
     ble-face region_insert='reverse'
+    # Emphasize search matches with bold underlining.
     ble-face region_match='underline,bold'
+    # Reverse and bold the target region of an editing operation.
     ble-face region_target='reverse,bold'
+    # Reverse the character that typing in overwrite mode will replace.
     ble-face overwrite_mode='reverse'
 
+    # Mark syntax errors in red with bold underlining.
     ble-face syntax_error='fg=1,underline,bold'
+    # Color history expansions, such as !!, magenta and bold.
     ble-face syntax_history_expansion='fg=5,bold'
 
+    # Mark directories with the sticky bit in blue with bold underlining.
     ble-face filename_directory_sticky='fg=4,underline,bold'
+    # Mark broken symbolic links in red with underlining.
     ble-face filename_orphan='fg=1,underline'
+    # Mark files with the setuid bit in magenta with bold underlining.
     ble-face filename_setuid='fg=5,underline,bold'
+    # Mark files with the setgid bit in yellow with bold underlining.
     ble-face filename_setgid='fg=3,underline,bold'
+    # Mark Unix socket paths in cyan with underlining.
     ble-face filename_socket='fg=6,underline'
+    # Mark named pipe paths in green with underlining.
     ble-face filename_pipe='fg=2,underline'
+    # Mark character device paths with bold underlining.
     ble-face filename_character='underline,bold'
+    # Mark block device paths in yellow with underlining.
     ble-face filename_block='fg=3,underline'
   '';
 
