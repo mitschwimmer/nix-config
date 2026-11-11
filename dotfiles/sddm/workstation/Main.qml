@@ -7,12 +7,10 @@ Rectangle {
 
     width: 1024
     height: 768
-    color: "#090909"
+    color: "#000000"
 
-    // Match the Quickshell PolkitDialog and Palette. The greeter runs outside
-    // the user session, so keep this palette self-contained.
-    readonly property color surface: "#0E0E0E"
-    readonly property color tile: "#1A1A1A"
+    // An image-free, OLED-black login surface. Keep the Polkit palette and
+    // typography, but leave the form unframed and left of center.
     readonly property color line: "#2A2A2A"
     readonly property color muted: "#8C8C8C"
     readonly property color foreground: "#F2F2F2"
@@ -57,24 +55,16 @@ Rectangle {
         }
     }
 
-    Rectangle {
-        id: panel
-        anchors.centerIn: parent
-        width: Math.min(420, root.width - 40)
-        height: content.implicitHeight + 56
-        radius: 10
-        color: root.surface
-        border.width: 1
-        border.color: root.line
+    Item {
+        id: login
+        width: Math.min(440, root.width - 72)
+        height: content.implicitHeight
+        x: Math.max(36, Math.min(root.width * 0.16, root.width - width - 36))
+        y: Math.max(36, (root.height - height) / 2)
 
         ColumnLayout {
             id: content
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
-                margins: 28
-            }
+            anchors.fill: parent
             spacing: 0
 
             RowLayout {
@@ -100,17 +90,19 @@ Rectangle {
 
             Text {
                 Layout.fillWidth: true
-                Layout.topMargin: 18
-                text: "Welcome back"
+                Layout.topMargin: 24
+                text: "Welcome back."
                 color: root.foreground
                 font.family: root.fontFamily
-                font.pixelSize: 20
+                font.pixelSize: root.width < 760 ? 30 : 40
                 font.bold: true
+                font.letterSpacing: -1
+                wrapMode: Text.Wrap
             }
 
             Text {
                 Layout.fillWidth: true
-                Layout.topMargin: 10
+                Layout.topMargin: 12
                 text: "Sign in to " + sddm.hostName
                 color: root.muted
                 font.family: root.fontFamily
@@ -118,16 +110,9 @@ Rectangle {
                 elide: Text.ElideRight
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                Layout.topMargin: 20
-                color: root.line
-            }
-
             Text {
                 Layout.fillWidth: true
-                Layout.topMargin: 18
+                Layout.topMargin: 52
                 text: "USERNAME"
                 color: root.muted
                 font.family: root.fontFamily
@@ -139,29 +124,32 @@ Rectangle {
                 id: username
                 Layout.fillWidth: true
                 Layout.topMargin: 8
-                implicitHeight: 48
-                leftPadding: 16
-                rightPadding: 16
+                implicitHeight: 46
+                leftPadding: 0
+                rightPadding: 0
+                bottomPadding: 8
                 verticalAlignment: TextInput.AlignVCenter
                 text: userModel.lastUser
                 color: root.foreground
                 selectionColor: root.red
                 selectedTextColor: root.foreground
                 font.family: root.fontFamily
-                font.pixelSize: 14
+                font.pixelSize: 16
                 onAccepted: password.forceActiveFocus()
 
-                background: Rectangle {
-                    radius: 5
-                    color: root.tile
-                    border.width: 1
-                    border.color: username.activeFocus ? root.red : root.line
+                background: Item {
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: parent.width
+                        height: 1
+                        color: username.activeFocus ? root.red : root.line
+                    }
                 }
             }
 
             Text {
                 Layout.fillWidth: true
-                Layout.topMargin: 18
+                Layout.topMargin: 24
                 text: "PASSWORD"
                 color: root.muted
                 font.family: root.fontFamily
@@ -173,9 +161,10 @@ Rectangle {
                 id: password
                 Layout.fillWidth: true
                 Layout.topMargin: 8
-                implicitHeight: 48
-                leftPadding: 16
-                rightPadding: 16
+                implicitHeight: 46
+                leftPadding: 0
+                rightPadding: 0
+                bottomPadding: 8
                 verticalAlignment: TextInput.AlignVCenter
                 echoMode: TextInput.Password
                 passwordCharacter: "▪"
@@ -184,7 +173,7 @@ Rectangle {
                 selectionColor: root.red
                 selectedTextColor: root.foreground
                 font.family: root.fontFamily
-                font.pixelSize: 18
+                font.pixelSize: 19
                 font.letterSpacing: 4
                 enabled: !root.authenticating
                 onAccepted: root.submitLogin()
@@ -193,17 +182,19 @@ Rectangle {
                         root.errorMessage = ""
                 }
 
-                background: Rectangle {
-                    radius: 5
-                    color: root.tile
-                    border.width: 1
-                    border.color: password.activeFocus ? root.red : root.line
+                background: Item {
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: parent.width
+                        height: 1
+                        color: password.activeFocus ? root.red : root.line
+                    }
                 }
             }
 
             Text {
                 Layout.fillWidth: true
-                Layout.topMargin: 10
+                Layout.topMargin: 12
                 visible: root.errorMessage.length > 0
                 text: root.errorMessage
                 color: root.red
@@ -214,9 +205,7 @@ Rectangle {
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.topMargin: 24
-
-                Item { Layout.fillWidth: true }
+                Layout.topMargin: 26
 
                 DialogButton {
                     colors: root
@@ -225,96 +214,91 @@ Rectangle {
                     enabled: !root.authenticating
                     onClicked: root.submitLogin()
                 }
-            }
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                Layout.topMargin: 24
-                color: root.line
+                Item { Layout.fillWidth: true }
             }
 
             ComboBox {
-                    id: sessionPicker
-                    Layout.fillWidth: true
-                    Layout.topMargin: 14
-                    Layout.preferredHeight: 36
-                    visible: sessionModel.count > 1
-                    model: sessionModel
-                    textRole: "name"
-                    currentIndex: sessionModel.lastIndex >= 0
-                        ? sessionModel.lastIndex : 0
+                id: sessionPicker
+                Layout.fillWidth: true
+                Layout.topMargin: 46
+                Layout.preferredHeight: 36
+                visible: sessionModel.count > 1
+                model: sessionModel
+                textRole: "name"
+                currentIndex: sessionModel.lastIndex >= 0
+                    ? sessionModel.lastIndex : 0
+                font.family: root.fontFamily
+                font.pixelSize: 11
+
+                background: Item {
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: parent.width
+                        height: 1
+                        color: sessionPicker.activeFocus ? root.red : root.line
+                    }
+                }
+                contentItem: Text {
+                    leftPadding: 0
+                    rightPadding: 24
+                    text: sessionPicker.displayText
+                    font: sessionPicker.font
+                    color: root.muted
+                    verticalAlignment: Text.AlignVCenter
+                    elide: Text.ElideRight
+                }
+                indicator: Text {
+                    text: "⌄"
+                    color: root.muted
+                    font.family: root.fontFamily
+                    font.pixelSize: 16
+                    anchors.right: parent.right
+                    anchors.rightMargin: 3
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                delegate: ItemDelegate {
+                    width: sessionPicker.width
+                    text: model.name
                     font.family: root.fontFamily
                     font.pixelSize: 11
-
-                    background: Rectangle {
-                        radius: 5
-                        color: root.tile
-                        border.width: 1
-                        border.color: sessionPicker.activeFocus ? root.red : root.line
-                    }
                     contentItem: Text {
-                        leftPadding: 12
-                        rightPadding: 24
-                        text: sessionPicker.displayText
-                        font: sessionPicker.font
+                        text: parent.text
                         color: root.foreground
+                        font: parent.font
                         verticalAlignment: Text.AlignVCenter
                         elide: Text.ElideRight
                     }
-                    indicator: Text {
-                        text: "⌄"
-                        color: root.muted
-                        font.family: root.fontFamily
-                        font.pixelSize: 16
-                        anchors.right: parent.right
-                        anchors.rightMargin: 10
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                    delegate: ItemDelegate {
-                        width: sessionPicker.width
-                        text: model.name
-                        font.family: root.fontFamily
-                        font.pixelSize: 11
-                        contentItem: Text {
-                            text: parent.text
-                            color: root.foreground
-                            font: parent.font
-                            verticalAlignment: Text.AlignVCenter
-                            elide: Text.ElideRight
-                        }
-                        background: Rectangle {
-                            color: parent.highlighted ? root.line : root.tile
-                        }
-                    }
-                    popup: Popup {
-                        y: sessionPicker.height - 1
-                        width: sessionPicker.width
-                        implicitHeight: Math.min(contentItem.implicitHeight, 240)
-                        padding: 1
-                        contentItem: ListView {
-                            clip: true
-                            implicitHeight: contentHeight
-                            model: sessionPicker.popup.visible
-                                ? sessionPicker.delegateModel : null
-                            currentIndex: sessionPicker.highlightedIndex
-                            ScrollIndicator.vertical: ScrollIndicator {}
-                        }
-                        background: Rectangle {
-                            radius: 5
-                            color: root.tile
-                            border.width: 1
-                            border.color: root.line
-                        }
+                    background: Rectangle {
+                        color: parent.highlighted ? root.line : "#161616"
                     }
                 }
+                popup: Popup {
+                    y: sessionPicker.height - 1
+                    width: sessionPicker.width
+                    implicitHeight: Math.min(contentItem.implicitHeight, 240)
+                    padding: 1
+                    contentItem: ListView {
+                        clip: true
+                        implicitHeight: contentHeight
+                        model: sessionPicker.popup.visible
+                            ? sessionPicker.delegateModel : null
+                        currentIndex: sessionPicker.highlightedIndex
+                        ScrollIndicator.vertical: ScrollIndicator {}
+                    }
+                    background: Rectangle {
+                        radius: 5
+                        color: "#161616"
+                        border.width: 1
+                        border.color: root.line
+                    }
+                }
+            }
 
             RowLayout {
                 Layout.fillWidth: true
-                Layout.topMargin: 14
-                spacing: 10
-
-                Item { Layout.fillWidth: true }
+                Layout.topMargin: sessionPicker.visible ? 22 : 42
+                spacing: 26
 
                 DialogButton {
                     colors: root
@@ -329,6 +313,8 @@ Rectangle {
                     visible: sddm.canPowerOff
                     onClicked: sddm.powerOff()
                 }
+
+                Item { Layout.fillWidth: true }
             }
         }
     }

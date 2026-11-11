@@ -1,9 +1,13 @@
 # Workstation SDDM theme
 
-Pure Qt 6 / Qt Quick theme for the existing Weston-based SDDM greeter.
-The card follows `dotfiles/quickshell/PolkitDialog.qml` and
-`dotfiles/quickshell/Palette.qml`: near-black, muted gray borders,
-JetBrainsMono Nerd Font, red accent, uppercase labels, square password masks.
+Qt 6 / Qt Quick theme for the existing Weston-based SDDM greeter.
+
+The theme takes the Polkit dialog's typography and restrained red accent
+(`dotfiles/quickshell/PolkitDialog.qml` and `Palette.qml`) into an
+unframed, typography-first login on a **pure black** (`#000000`) OLED
+background. There is no wallpaper, card, border or filled button. A
+left-of-center layout, oversized heading, generous vertical spacing and
+thin underlines give the login screen its structure.
 
 No Quickshell service is needed at login. The SDDM greeter has its own process,
 session models and authentication API.
@@ -12,13 +16,13 @@ The username is editable, initialized from SDDM's last user. Passwords are
 cleared on submission and failures. Session selection is available when SDDM
 offers more than one session. Restart and shutdown buttons use SDDM's own API.
 
-Preview with a test-capable SDDM Qt 6 greeter, if available:
+Preview with the SDDM Qt 6 greeter:
 
 ```sh
 sddm-greeter-qt6 --test-mode --theme "$PWD/dotfiles/sddm/workstation"
 ```
 
-The test mode opens a preview without changing the active display manager,
+Test mode opens a preview without changing the active display manager,
 and login/reboot controls do not perform real actions. A full greeter test
 requires deploying a NixOS generation.
 
