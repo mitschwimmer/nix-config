@@ -36,7 +36,10 @@ passed only to the workstation configuration.
 The workstation profile uses SDDM (Wayland greeter via Weston) for both
 `meanovo` and `meatab`. Niri remains the default session, and automatic
 login is disabled. The SDDM Wayland greeter is still experimental upstream.
-The custom login theme is a later, separate change.
+The login theme matches the Quickshell Polkit dialog: a compact dark card,
+JetBrainsMono typography, muted outlines and a restrained red accent. Its
+source is in `dotfiles/sddm/workstation/`; see that directory's README for
+testing and recovery.
 
 Before activating, verify the `henner` account password works for a local
 login and that another TTY (Ctrl+Alt+F2 or F3) and SSH recovery are available.

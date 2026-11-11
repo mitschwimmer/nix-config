@@ -1,0 +1,8 @@
+[SddmGreeterTheme]
+Name=Workstation
+Description=Minimal SDDM greeter matching the Quickshell Polkit dialog
+Type=sddm-theme
+MainScript=Main.qml
+Theme-Id=workstation
+Theme-API=2.0
+QtVersion=6
