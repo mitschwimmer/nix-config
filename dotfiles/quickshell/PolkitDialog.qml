@@ -11,7 +11,7 @@ FloatingWindow {
     title: "Authentication Required"
     visible: flow !== null && flow !== undefined
     implicitWidth: 440
-    implicitHeight: 310
+    implicitHeight: 350
     color: palette.surface
 
     function submitResponse() {
@@ -43,8 +43,8 @@ FloatingWindow {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 24
-        spacing: 12
+        anchors.margins: 28
+        spacing: 14
 
         RowLayout {
             spacing: 10
@@ -134,16 +134,25 @@ FloatingWindow {
         TextField {
             id: response
             Layout.fillWidth: true
-            implicitHeight: 42
+            implicitHeight: 48
+            leftPadding: 18
+            rightPadding: 18
+            topPadding: 12
+            bottomPadding: 12
+            verticalAlignment: TextInput.AlignVCenter
             enabled: root.flow ? root.flow.isResponseRequired : false
             echoMode: root.flow && root.flow.responseVisible
                 ? TextInput.Normal : TextInput.Password
+            passwordCharacter: "▪"
+            passwordMaskDelay: 0
             color: root.palette.foreground
             selectionColor: root.palette.red
             selectedTextColor: root.palette.foreground
-            placeholderText: "Response"
+            placeholderText: "RESPONSE"
+            placeholderTextColor: root.palette.muted
             font.family: root.palette.font
-            font.pixelSize: 13
+            font.pixelSize: echoMode === TextInput.Password ? 18 : 14
+            font.letterSpacing: echoMode === TextInput.Password ? 6 : 0
             onAccepted: root.submitResponse()
 
             background: Rectangle {
