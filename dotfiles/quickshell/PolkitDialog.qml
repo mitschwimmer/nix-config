@@ -162,20 +162,19 @@ FloatingWindow {
             Layout.fillWidth: true
             spacing: 10
 
-            Button {
+            DialogButton {
                 Layout.fillWidth: true
-                implicitHeight: 36
+                colors: root.palette
                 text: "CANCEL"
-                font.family: root.palette.font
                 onClicked: root.cancel()
             }
 
-            Button {
+            DialogButton {
                 Layout.fillWidth: true
-                implicitHeight: 36
+                colors: root.palette
+                primary: true
                 text: "AUTHORIZE"
                 enabled: root.flow ? root.flow.isResponseRequired : false
-                font.family: root.palette.font
                 onClicked: root.submitResponse()
             }
         }
@@ -193,6 +192,33 @@ FloatingWindow {
         function onAuthenticationFailed() {
             response.clear()
             response.forceActiveFocus()
+        }
+    }
+
+    component DialogButton: Button {
+        id: button
+        required property var colors
+        property bool primary: false
+
+        implicitHeight: 36
+        font.family: colors.font
+        font.pixelSize: 11
+
+        background: Rectangle {
+            radius: 6
+            color: button.primary ? button.colors.red : button.colors.tile
+            border.width: 1
+            border.color: button.primary ? button.colors.red : button.colors.line
+            opacity: button.enabled ? 1 : 0.45
+        }
+
+        contentItem: Text {
+            text: button.text
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            font: button.font
+            color: button.primary ? "#FFFFFF" : button.colors.foreground
+            opacity: button.enabled ? 1 : 0.45
         }
     }
 }
