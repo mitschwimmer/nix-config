@@ -26,7 +26,7 @@ jobs:
           for host in meablack meablack-secure meawhite meawhite-secure; do
             nix eval --no-update-lock-file --raw ".#nixosConfigurations.$host.config.system.build.toplevel.drvPath"
           done
-          for guest in k8s-test k8s-cp-01 k8s-cp-02 k8s-cp-03 k8s-worker-01 k8s-worker-02; do
+          for guest in k8s-cp-01 k8s-cp-02 k8s-cp-03 k8s-worker-01 k8s-worker-02; do
             nix eval --no-update-lock-file --raw ".#nixosConfigurations.$guest.config.microvm.declaredRunner.drvPath"
           done
       - name: Build initial K3s control-plane MicroVM runner and guest image
