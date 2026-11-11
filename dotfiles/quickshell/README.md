@@ -32,10 +32,12 @@ qs -c workstation ipc call theme light
 qs -c workstation ipc call theme dark
 ```
 
-The built-in Polkit agent presents requests in a standard floating window.
-It displays the requesting action, supports multiple PAM conversation prompts
-and selectable identities, and clears entered responses. Only one agent can
-register in a graphical session; stop any separately started Polkit agent.
+The built-in Polkit agent presents requests in a standard floating window,
+matched by title in Niri's window rules. It displays the requesting action,
+supports multiple PAM conversation prompts and selectable identities, and
+clears entered responses. Passwords use spaced square mask characters.
+Only one agent can register in a graphical session; stop any separately
+started Polkit agent.
 
 To test with a deliberately unprivileged command:
 
