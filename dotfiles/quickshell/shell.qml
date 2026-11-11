@@ -4,7 +4,8 @@ Scope {
     Palette { id: palette }
     NiriState { id: niri }
 
-    Wallpaper { niriState: niri }
+    Sidebar { id: sidebar; palette: palette }
+    Wallpaper { niriState: niri; sidebar: sidebar }
     Notifications { niriState: niri; palette: palette }
     Osd { niriState: niri; palette: palette }
     Polkit { palette: palette }
