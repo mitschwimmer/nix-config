@@ -12,7 +12,7 @@ All outputs target x86_64-linux.
 | Host composition or inputs | `flake.nix` | Selected host's `configuration.nix`, `flake.lock` only for dependency work |
 | Shared NixOS defaults or SSH | `profiles/base.nix` | `users/henner.nix`, selected host's overrides |
 | Desktop system services, VPN or login | `profiles/workstation.nix` | `home/henner/desktop.nix` |
-| meanovo Secure Boot, TPM or boot display modes | `meanovo/README.md` | `meanovo/secure-boot.nix`, `meanovo/hardware-configuration.nix` |
+| meanovo Secure Boot, TPM or boot display modes | `meanovo/README.md` | `flake.nix`, `meanovo/secure-boot.nix`, `meanovo/hardware-configuration.nix` |
 | Account or shared SSH keys | `users/henner.nix` | `users/henner/authorized_keys` |
 | CLI tools, Git or Helix | `home/henner/cli.nix` | Referenced files in `dotfiles/` |
 | Bash, ble.sh or shell integration | `home/henner/shell.nix` | `profiles/base.nix` for system Bash |
@@ -39,9 +39,11 @@ For a host removal, search the entire tracked tree, including workflows, with
   Pass dependencies through required properties; prefer shallow, cohesive
   components over deep nesting or trivial wrapper files.
 - Preserve system and Home Manager state versions during unrelated changes.
-- Secure Boot variants extend installed hosts; installer live systems are separate.
-  Installer builds require a recovery file and intentionally use `--impure`.
-  Read the host runbook before working on installation or recovery.
+- Server Secure Boot variants extend installed hosts; the laptop's
+  `meanovo` target is already secure by default, `meanovo-secure` aliases it,
+  and `meanovo-legacy` is explicitly unsigned recovery only. Installer live
+  systems are separate; installer builds require a recovery file and
+  intentionally use `--impure`. Read the host runbook before recovery.
 - Update the relevant routing row when moving an entry point. Keep operational
   procedures in their existing runbooks rather than copying them here.
 

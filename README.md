@@ -19,9 +19,12 @@ Every installed machine is composed through `mkHost` in `flake.nix`:
 | `<host>/configuration.nix` | Hardware, boot, networking and host workloads |
 
 meablack and meawhite use the shared system and user modules. meatab and meanovo
-additionally select the workstation profile. Secure Boot
-variants inherit the complete installed-host configuration. Installer live
-systems remain separate and include the composed target system for offline use.
+additionally select the workstation profile. Server Secure Boot variants inherit
+the installed-host configuration. On the laptop, `meanovo` uses Lanzaboote,
+Secure Boot and TPM2 unlock by default; `meanovo-secure` remains an alias,
+while `meanovo-legacy` is an unsigned recovery-only target that requires
+disabling firmware Secure Boot before booting. Installer live systems remain
+separate and include the composed target system for offline use.
 
 Add settings needed everywhere to the baseline or shared Home Manager modules.
 Add graphical settings to the workstation/desktop modules. Keep workload tools
@@ -45,7 +48,8 @@ nix eval --no-update-lock-file --raw .#nixosConfigurations.meatab.config.system.
 ```
 
 Switch the display manager **at reboot**, not inside the running graphical
-session. For the host being tested:
+session. On `meanovo`, this command now uses the signed Secure Boot configuration
+and requires the local `/var/lib/sbctl` signing keys. For the host being tested:
 
 ```sh
 sudo nixos-rebuild boot --flake .#meanovo
