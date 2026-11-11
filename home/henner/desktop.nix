@@ -12,11 +12,6 @@
     activeConfig = "workstation";
   };
 
-  home.shellAliases = {
-    prefer-light = "dconf write /org/gnome/desktop/interface/color-scheme \"'prefer-light'\"";
-    prefer-dark = "dconf write /org/gnome/desktop/interface/color-scheme \"'prefer-dark'\"";
-  };
-
   home.packages =
     (with pkgs; [
       # Desktop environment

@@ -24,8 +24,7 @@ until Niri reports one. No permanent bar or notification history is kept.
 
 `Mod+Shift+T` switches light/dark mode and updates the GNOME color-scheme
 setting used by GTK applications. The shell follows changes to the setting
-made by other tools, including the existing `prefer-light`/`prefer-dark`
-aliases. The same switch is exposed through Quickshell IPC:
+made by other tools. The same switch is exposed through Quickshell IPC:
 
 ```sh
 qs -c workstation ipc call theme toggle
