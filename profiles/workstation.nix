@@ -58,7 +58,7 @@ in
     enable = true;
     settings.default_session = {
       user = "greeter";
-      command = "${pkgs.cage}/bin/cage -s -- ${pkgs.quickshell}/bin/quickshell -p ${../../dotfiles/quickshell/greeter.qml}";
+      command = "${pkgs.cage}/bin/cage -s -- ${pkgs.quickshell}/bin/quickshell -p ${../../dotfiles/quickshell}/greeter.qml";
     };
   };
 
