@@ -3,11 +3,13 @@
   xdg.configFile = {
     "foot/foot.ini".source = ../../dotfiles/foot/foot.ini;
     "niri/config.kdl".source = ../../dotfiles/niri/config.kdl;
-    "quickshell" = {
-      source = ../../dotfiles/quickshell;
-      recursive = true;
-    };
     "gtk-3.0/bookmarks".source = ../../dotfiles/gtk-3.0/bookmarks;
+  };
+
+  programs.quickshell = {
+    enable = true;
+    configs.workstation = ../../dotfiles/quickshell;
+    activeConfig = "workstation";
   };
 
   home.shellAliases = {
@@ -28,7 +30,6 @@
       brightnessctl
       sushi
       guvcview
-      quickshell
 
       # Applications
       recordbox

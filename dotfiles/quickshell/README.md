@@ -1,7 +1,8 @@
 # Quickshell desktop
 
-The Niri session starts one Quickshell process with a wallpaper, notification
-popups and an on-screen display. It uses the monochrome palette in
+Home Manager installs the named `workstation` Quickshell configuration from this
+directory. Niri starts it with `quickshell -c workstation`. It provides a
+wallpaper, notification popups and an on-screen display, using the palette in
 `Palette.qml`, with red (`#D71921`) reserved for small accents.
 
 - `shell.qml`: composition root.
@@ -22,12 +23,12 @@ After switching to the new NixOS generation, log out and back in so Niri
 starts the new shell.
 
 ```sh
-qs ipc show
-qs ipc call osd volumeUp
-qs ipc call osd volumeMute
-qs ipc call osd micMute
-qs ipc call osd brightnessUp
-qs ipc call osd mediaPlayPause
+qs -c workstation ipc show
+qs -c workstation ipc call osd volumeUp
+qs -c workstation ipc call osd volumeMute
+qs -c workstation ipc call osd micMute
+qs -c workstation ipc call osd brightnessUp
+qs -c workstation ipc call osd mediaPlayPause
 nix shell nixpkgs#libnotify -c notify-send -a "Quickshell test" "Notification" "Popups should appear on the focused monitor"
 ```
 

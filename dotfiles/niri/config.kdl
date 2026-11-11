@@ -98,7 +98,7 @@ layout {
     }
 }
 
-spawn-sh-at-startup "quickshell > /tmp/quickshell-startup.log 2>&1"
+spawn-sh-at-startup "quickshell -c workstation > /tmp/quickshell-startup.log 2>&1"
 
 hotkey-overlay {
     skip-at-startup
@@ -128,18 +128,18 @@ binds {
     Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Super+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock" "-Kc000000"; }
 
-    XF86AudioRaiseVolume allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "volumeUp"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "volumeDown"; }
-    XF86AudioMute        allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "volumeMute"; }
-    XF86AudioMicMute     allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "micMute"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "volumeUp"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "volumeDown"; }
+    XF86AudioMute        allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "volumeMute"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "micMute"; }
 
-    XF86AudioPlay        allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "mediaPlayPause"; }
-    XF86AudioStop        allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "mediaStop"; }
-    XF86AudioPrev        allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "mediaPrevious"; }
-    XF86AudioNext        allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "mediaNext"; }
+    XF86AudioPlay        allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "mediaPlayPause"; }
+    XF86AudioStop        allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "mediaStop"; }
+    XF86AudioPrev        allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "mediaPrevious"; }
+    XF86AudioNext        allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "mediaNext"; }
 
-    XF86MonBrightnessUp   allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "brightnessUp"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "qs" "ipc" "call" "osd" "brightnessDown"; }
+    XF86MonBrightnessUp   allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "brightnessUp"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "brightnessDown"; }
 
     Mod+O repeat=false { toggle-overview; }
     Mod+Q repeat=false { close-window; }
