@@ -2,6 +2,12 @@
 let
   resolvedHook = "${pkgs.update-systemd-resolved}/libexec/openvpn/update-systemd-resolved";
 
+  # Keep the greeter theme alongside the desktop's Quickshell styling.
+  sddmTheme = pkgs.runCommand "workstation-sddm-theme" { } ''
+    mkdir -p "$out/share/sddm/themes/workstation"
+    cp -R ${../dotfiles/sddm/workstation}/. "$out/share/sddm/themes/workstation/"
+  '';
+
   vpn = file: {
     config = "config ${file}";
     up = resolvedHook;
@@ -61,6 +67,7 @@ in
       # Prefer a Wayland greeter on a Niri workstation; test before theming.
       wayland.enable = true;
       wayland.compositor = "weston";
+      theme = "workstation";
     };
   };
 
@@ -93,6 +100,7 @@ in
   ];
 
   environment.systemPackages = with pkgs; [
+    sddmTheme
     nixfmt
     wget
     powertop
