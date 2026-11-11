@@ -138,7 +138,6 @@ Scope {
         model: Quickshell.screens
 
         OsdWindow {
-            required property var modelData
             palette: root.palette
             targetScreen: root.targetScreen
             showing: root.showing

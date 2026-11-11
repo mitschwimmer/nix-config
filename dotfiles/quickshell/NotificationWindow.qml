@@ -11,8 +11,8 @@ PanelWindow {
 
     screen: modelData
     visible: root.notices.length > 0 && modelData.name === targetScreen
-    width: 400
-    height: stack.implicitHeight + 20
+    implicitWidth: 400
+    implicitHeight: stack.implicitHeight + 20
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
 
