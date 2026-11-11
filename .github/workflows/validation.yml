@@ -1,0 +1,33 @@
+name: Shared machine defaults (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - name: Evaluate every machine and Secure Boot variant
+        run: |
+          set -euo pipefail
+          for host in meablack meablack-secure meawhite meawhite-secure meatab meanovo; do
+            nix eval --no-update-lock-file --raw ".#nixosConfigurations.${host}.config.system.build.toplevel.drvPath"
+          done
+      - name: Validate Foot configuration with the pinned package
+        run: |
+          foot=$(nix build --no-link --print-out-paths --no-update-lock-file --impure --expr '(builtins.getFlake (toString ./.)).inputs.nixpkgs.legacyPackages.x86_64-linux.foot')
+          "$foot/bin/foot" --check-config --config=dotfiles/foot/foot.ini
+      - name: Check shared accounts and opt-in desktop profiles
+        run: |
+          nix eval --no-update-lock-file --impure --json --expr '
+            let flake = builtins.getFlake (toString ./.);
+            in import ./tests/profiles.nix { inherit (flake) nixosConfigurations; }
+          '

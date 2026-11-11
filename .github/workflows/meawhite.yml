@@ -1,27 +1,6 @@
 name: meawhite NixOS build
 
 on:
-  pull_request:
-    paths:
-      - "flake.nix"
-      - "flake.lock"
-      - "profiles/**"
-      - "users/**"
-      - "home/**"
-      - "dotfiles/**"
-      - "meawhite/**"
-      - ".github/workflows/meawhite.yml"
-  push:
-    branches: [main]
-    paths:
-      - "flake.nix"
-      - "flake.lock"
-      - "profiles/**"
-      - "users/**"
-      - "home/**"
-      - "dotfiles/**"
-      - "meawhite/**"
-      - ".github/workflows/meawhite.yml"
   workflow_dispatch:
 
 permissions:

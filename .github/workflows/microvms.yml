@@ -1,11 +1,6 @@
 name: MicroVM foundation
 
 on:
-  pull_request:
-    paths: ["flake.nix", "flake.lock", "profiles/**", "users/**", "kubernetes/**", "meablack/**", "meawhite/**", "tests/microvms.nix", ".github/workflows/microvms.yml"]
-  push:
-    branches: [main]
-    paths: ["flake.nix", "flake.lock", "profiles/**", "users/**", "kubernetes/**", "meablack/**", "meawhite/**", "tests/microvms.nix", ".github/workflows/microvms.yml"]
   workflow_dispatch:
 
 permissions:
