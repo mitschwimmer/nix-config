@@ -34,6 +34,9 @@ For a host removal, search the entire tracked tree, including workflows, with
   native app configuration in dotfiles, and workloads beside their host.
 - Keep imports explicit. Introduce another module when it isolates a coherent
   task; avoid automatic directory imports and one-option wrapper modules.
+- For Quickshell QML, separate state/services from windows and visual components.
+  Pass dependencies through required properties; prefer shallow, cohesive
+  components over deep nesting or trivial wrapper files.
 - Preserve system and Home Manager state versions during unrelated changes.
 - Secure Boot variants extend installed hosts; installer live systems are separate.
   Installer builds require a recovery file and intentionally use `--impure`.

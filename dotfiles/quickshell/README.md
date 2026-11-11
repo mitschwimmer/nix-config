@@ -7,8 +7,11 @@ popups and an on-screen display. It uses the monochrome palette in
 - `shell.qml`: composition root.
 - `NiriState.qml`: shared Niri event stream, focused output and workspace state.
 - `Wallpaper.qml`: existing per-output wallpaper rotation and effects.
-- `Notifications.qml`: freedesktop notification server and interactive popups.
-- `Osd.qml`: PipeWire audio, MPRIS transport and brightness control.
+- `Notifications.qml`: freedesktop notification server and popup state.
+- `NotificationWindow.qml`: popup layout and per-monitor placement.
+- `NotificationCard.qml`: individual notification and its action buttons.
+- `Osd.qml`: PipeWire audio, MPRIS transport, brightness and IPC.
+- `OsdWindow.qml`: visual on-screen display.
 
 Notifications and the OSD appear on the focused monitor, or the first monitor
 until Niri reports one. No permanent bar or notification history is kept.
