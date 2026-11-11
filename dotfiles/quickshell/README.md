@@ -52,6 +52,17 @@ SDDM uses the separate, Qt 6-only `dotfiles/sddm/workstation/` greeter theme,
 which mirrors the Polkit dialog's palette and layout. Quickshell itself runs
 only inside the Niri session.
 
+## Wallpaper loading errors
+
+If the selected wallpaper fails to load, a small message at the bottom left
+shows its filename using the shell's shared font and light/dark palette. The
+message remains readable above the wallpaper's blur and dimming effects and
+does not consume pointer input.
+
+Only the selected image can show an error message. A failed preload remains
+silent until that image is selected; selecting a working image clears the
+message. Long filenames wrap so the complete name stays visible.
+
 ## Manual checks
 
 After switching to the new NixOS generation, log out and back in so Niri
