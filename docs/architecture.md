@@ -2,11 +2,12 @@
 
 ## Implementation status
 
-This is phase 1: an opt-in, declarative Cloud Hypervisor foundation. Both
-hosts retain their existing OS, disk layouts and Secure Boot variants. There
-are five cluster guest definitions and a smaller `k8s-test` guest. No guests
-are activated by default. K3s, Keepalived, Cilium and OpenEBS are **not yet
-installed**. Their runtime acceptance criteria remain open.
+This is a staged NixOS MicroVM Kubernetes bootstrap. Both hosts retain their
+existing OS, disk layouts and Secure Boot variants. There are five cluster
+guest definitions and a smaller optional `k8s-test` guest. The configuration
+enables only `k8s-cp-01` on meawhite as an initial K3s embedded-etcd server;
+all other guests remain inactive. The K3s runtime has **not** been observed or
+accepted on real hardware. Keepalived, Cilium and OpenEBS are not installed.
 
 The former Talos/NixVirt integration is retired. Shut the old guest down
 before activating this host configuration; see [bootstrap.md](bootstrap.md).
@@ -23,7 +24,7 @@ configuration live together under `kubernetes/`.
 | `meablack/microvms.nix`, `meawhite/microvms.nix` | Local activation, guest selection, bridge and uplink settings |
 | `profiles/microvm-host.nix` | Declarative guest lifecycle and TAP attachment |
 | `kubernetes/nodes.nix` | Stable names/MACs/vsock CIDs, placement and resource allocation |
-| `kubernetes/guest.nix` | Shared guest networking, persistent state and SSH |
+| `kubernetes/guest.nix`, `kubernetes/k3s.nix` | Shared guest OS and first-server K3s bootstrap |
 | `tests/microvms.nix` | Evaluation of topology, identities, storage and enabled host paths |
 | `docs/` | Cluster bootstrap, operation, recovery and acceptance records |
 
@@ -84,19 +85,24 @@ uses the `vm-state` filesystem label rather than relying on a drive letter.
 
 Worker OpenEBS disks and guest LVM initialization are deferred to phase 4.
 They must be separate raw, unformatted data images with no host thin pool.
-Before K3s, persist `/etc/rancher/node` (node password) outside the temporary
-root as well as `/var`; before LVM, address its persistent configuration and
-metadata backup paths. Do not provision secrets through files embedded in
-the store image. sops-nix integration belongs with the first K3s phase.
+The bootstrap K3s module redirects `/etc/rancher/node` (node password) to
+`/var/lib/rancher/node` using tmpfiles before the service starts. Verify the
+link and password persistence on the running guest. The first server generates
+its own bootstrap token under persistent `/var/lib/rancher/k3s/server/token`;
+keep an encrypted off-host copy. Do not provision secrets through files
+embedded in the store image. sops-nix token delivery is still required before
+adding other servers or agents. Before LVM, address its persistent configuration
+and metadata backup paths.
 
 ## Remaining phases
 
-1. Boot k8s-test, verify LAN/DNS/time, state and SSH identity across rebuild,
-   guest restart and host reboot. Verify both hosts' bridges and KVM support.
-2. Add K3s server/agent modules, secure token delivery and persistent node
-   credentials; bootstrap cp-01 directly, join cp-02/cp-03, then workers.
-   Add readiness-based Keepalived in the control-plane guests with no Cilium
-   dependency. Reserve a distinct API VIP/DNS name.
+1. Boot k8s-cp-01 and verify KVM, LAN/DNS/time, etcd, API, persistent node
+   password and K3s token across restarts. The operator elected to skip k8s-test;
+   runtime acceptance on the real guest is still mandatory. Test the meablack
+   bridge separately with console/rollback access before enabling its guests.
+2. Add K3s joining-server/agent configuration, secure runtime token delivery
+   and a reserved API VIP/DNS name. Join cp-02/cp-03, then workers, one at a
+   time. Add readiness-based Keepalived without depending on Cilium.
 3. Pin and validate Cilium native routing, Kubernetes PodCIDR allocation,
    kube-proxy replacement, LB IPAM/L2 Announcements and Gateway API/Envoy.
 4. Add worker LVM thin pools, OpenEBS Local PV LVM, snapshot CRDs/controller

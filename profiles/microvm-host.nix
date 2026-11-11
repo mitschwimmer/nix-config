@@ -11,7 +11,7 @@ in
     guests = lib.mkOption {
       type = lib.types.listOf (lib.types.enum (builtins.attrNames localNodes));
       default = [ ];
-      description = "Guests installed and started on this host; begin with k8s-test on meawhite.";
+      description = "Guests installed and started on this host; bootstrap with k8s-cp-01 on meawhite.";
     };
     bridge = lib.mkOption {
       type = lib.types.strMatching "[a-zA-Z0-9_-]{1,15}";

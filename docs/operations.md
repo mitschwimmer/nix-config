@@ -24,7 +24,7 @@ done
 for guest in k8s-test k8s-cp-01 k8s-cp-02 k8s-cp-03 k8s-worker-01 k8s-worker-02; do
   nix eval --no-update-lock-file --raw ".#nixosConfigurations.$guest.config.microvm.declaredRunner.drvPath"
 done
-nix build --no-update-lock-file .#nixosConfigurations.k8s-test.config.microvm.declaredRunner
+nix build --no-update-lock-file .#nixosConfigurations.k8s-cp-01.config.microvm.declaredRunner
 ```
 
 ## Inspect or restart a guest

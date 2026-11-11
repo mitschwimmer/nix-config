@@ -1,7 +1,7 @@
 { config, pkgs, name, node, ... }:
 {
   # Guests deliberately do not inherit mkHost's Home Manager/workstation setup.
-  imports = [ ../profiles/base.nix ];
+  imports = [ ../profiles/base.nix ./k3s.nix ];
 
   networking.hostName = name;
   networking.useDHCP = false;

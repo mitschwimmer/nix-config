@@ -69,8 +69,9 @@ For installer scripts, use `bash -n`, ShellCheck, and the host's mock disk tests
 For Foot, use the pinned-package check in `.github/workflows/validation.yml`.
 For MicroVMs, evaluate `tests/microvms.nix` as described in
 `docs/operations.md`, then evaluate each guest's `config.microvm.declaredRunner.drvPath`.
-The manual microvms workflow also builds the test guest runner. LAN, persistence and
-host-reboot acceptance must be checked on the real hosts before adding K3s.
+The manual microvms workflow also builds the k8s-cp-01 runner. LAN, K3s API,
+persistence and host-reboot acceptance must be checked on the real guest before
+joining additional cluster nodes.
 
 Use `.github/workflows/<host>.yml` for full server and installer builds.
 Evaluation does not establish build or runtime success. Report which checks ran
