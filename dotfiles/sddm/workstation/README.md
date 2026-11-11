@@ -15,8 +15,12 @@ offers more than one session. Restart and shutdown buttons use SDDM's own API.
 Preview with a test-capable SDDM Qt 6 greeter, if available:
 
 ```sh
-sddm-greeter-qt6 --test --theme "$PWD/dotfiles/sddm/workstation"
+sddm-greeter-qt6 --test-mode --theme "$PWD/dotfiles/sddm/workstation"
 ```
+
+The test mode opens a preview without changing the active display manager,
+and login/reboot controls do not perform real actions. A full greeter test
+requires deploying a NixOS generation.
 
 Before activating on a physical machine:
 
