@@ -39,7 +39,6 @@ Scope {
         model: Quickshell.screens
 
         NotificationWindow {
-            required property var modelData
             notices: root.notices
             targetScreen: root.targetScreen
             palette: root.palette

@@ -16,8 +16,8 @@ PanelWindow {
 
     screen: modelData
     visible: showing && modelData.name === targetScreen
-    width: 360
-    height: 112
+    implicitWidth: 360
+    implicitHeight: 112
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
     mask: Region {} // An OSD must never eat pointer input.
