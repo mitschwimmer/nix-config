@@ -234,14 +234,10 @@ Rectangle {
                 color: root.line
             }
 
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.topMargin: 14
-                spacing: 10
-
-                ComboBox {
+            ComboBox {
                     id: sessionPicker
-                    Layout.preferredWidth: 168
+                    Layout.fillWidth: true
+                    Layout.topMargin: 14
                     Layout.preferredHeight: 36
                     visible: sessionModel.count > 1
                     model: sessionModel
@@ -312,6 +308,11 @@ Rectangle {
                         }
                     }
                 }
+
+            RowLayout {
+                Layout.fillWidth: true
+                Layout.topMargin: 14
+                spacing: 10
 
                 Item { Layout.fillWidth: true }
 

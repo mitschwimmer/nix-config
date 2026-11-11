@@ -48,7 +48,9 @@ pkexec /run/current-system/sw/bin/id
 Cancel the prompt once, then retry and authenticate. Also verify that wrong
 passwords, keyboard focus and Enter-to-submit work.
 
-The login display manager is still Ly; Quickshell runs inside the Niri session.
+SDDM uses the separate, Qt 6-only `dotfiles/sddm/workstation/` greeter theme,
+which mirrors the Polkit dialog's palette and layout. Quickshell itself runs
+only inside the Niri session.
 
 ## Manual checks
 
