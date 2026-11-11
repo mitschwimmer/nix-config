@@ -3,8 +3,13 @@
   xdg.configFile = {
     "foot/foot.ini".source = ../../dotfiles/foot/foot.ini;
     "niri/config.kdl".source = ../../dotfiles/niri/config.kdl;
-    "quickshell/shell.qml".source = ../../dotfiles/quickshell/shell.qml;
     "gtk-3.0/bookmarks".source = ../../dotfiles/gtk-3.0/bookmarks;
+  };
+
+  programs.quickshell = {
+    enable = true;
+    configs.workstation = ../../dotfiles/quickshell;
+    activeConfig = "workstation";
   };
 
   home.shellAliases = {
@@ -23,12 +28,8 @@
       adwaita-icon-theme
       swaylock
       brightnessctl
-      playerctl
-      mako
-      swayosd
       sushi
       guvcview
-      quickshell
 
       # Applications
       recordbox
