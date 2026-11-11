@@ -125,6 +125,7 @@ window-rule {
 binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
     Mod+T hotkey-overlay-title="Open a Terminal" { spawn "foot"; }
+    Mod+Shift+T hotkey-overlay-title="Toggle light/dark appearance" { spawn "qs" "-c" "workstation" "ipc" "call" "theme" "toggle"; }
     Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Super+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock" "-Kc000000"; }
 

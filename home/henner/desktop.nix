@@ -28,6 +28,7 @@
       adwaita-icon-theme
       swaylock
       brightnessctl
+      dconf
       sushi
       guvcview
 

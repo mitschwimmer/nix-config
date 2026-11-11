@@ -7,4 +7,5 @@ Scope {
     Wallpaper { niriState: niri }
     Notifications { niriState: niri; palette: palette }
     Osd { niriState: niri; palette: palette }
+    Polkit { palette: palette }
 }
