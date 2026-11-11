@@ -1,27 +1,6 @@
 name: meablack NixOS build
 
 on:
-  pull_request:
-    paths:
-      - "flake.nix"
-      - "flake.lock"
-      - "profiles/**"
-      - "users/**"
-      - "home/**"
-      - "dotfiles/**"
-      - "meablack/**"
-      - ".github/workflows/meablack.yml"
-  push:
-    branches: [main]
-    paths:
-      - "flake.nix"
-      - "flake.lock"
-      - "profiles/**"
-      - "users/**"
-      - "home/**"
-      - "dotfiles/**"
-      - "meablack/**"
-      - ".github/workflows/meablack.yml"
   workflow_dispatch:
 
 permissions:

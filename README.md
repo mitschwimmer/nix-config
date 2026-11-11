@@ -2,8 +2,9 @@
 
 For targeted exploration and validation commands, start with [AGENTS.md](AGENTS.md).
 Host installation and recovery procedures are in [meablack/README.md](meablack/README.md)
-and [meawhite/README.md](meawhite/README.md); Talos operations are in
-[meawhite/talos/README.md](meawhite/talos/README.md).
+and [meawhite/README.md](meawhite/README.md). The Kubernetes MicroVM foundation
+and implementation status are in [docs/architecture.md](docs/architecture.md);
+start deployment with [docs/bootstrap.md](docs/bootstrap.md).
 
 Every installed machine is composed through `mkHost` in `flake.nix`:
 
@@ -78,7 +79,22 @@ user `~/.ssh/authorized_keys` file; servers use their existing system-only
 
 The unattended offline installer images keep networking and SSH disabled.
 
-The shared-defaults workflow evaluates all installed-machine profiles, checks the
-shared account and workstation/server boundary with `tests/profiles.nix`, and
-checks Foot's configuration using the pinned Nix package. Server build workflows
-also run when shared profiles, user configuration or dotfiles change.
+Automatic CI currently runs syntax checks only: every tracked Nix file is parsed
+with `nix-instantiate --parse`, Bash scripts with `bash -n`, and `flake.lock` as
+JSON. It does not fetch flake inputs, evaluate NixOS options or build images.
+Superseded syntax runs on the same branch are cancelled.
+
+Deeper checks are retained as manual workflows:
+
+- **Shared machine defaults (manual)** (`validation.yml`): evaluate installed
+  hosts, check shared accounts and desktop boundaries, and validate Foot.
+- **meablack NixOS build** / **meawhite NixOS build**: evaluate and build the
+  server, Secure Boot variant and offline installer; check installer scripts.
+- **MicroVM foundation**: evaluate topology, enabled-host fixtures and guest
+  runners, then build the test guest image.
+
+Once a workflow exists on `main`, use **Actions → Run workflow** and select the
+branch to check. Newly added manual workflows become dispatchable after merging;
+until then, use the equivalent local commands in AGENTS.md and docs/operations.md.
+A green automatic check establishes syntax validity only; evaluation, image
+builds and host acceptance remain separate requirements before deployment.

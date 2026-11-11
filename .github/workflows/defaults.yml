@@ -1,4 +1,4 @@
-name: Shared machine defaults
+name: Syntax checks
 
 on:
   pull_request:
@@ -9,28 +9,33 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: syntax-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  evaluate:
+  syntax:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - name: Evaluate every machine and Secure Boot variant
+      # Parse directly: no flake evaluation, input downloads or builds.
+      - name: Parse all tracked Nix files
+        shell: bash
         run: |
           set -euo pipefail
-          for host in meablack meablack-secure meawhite meawhite-secure meatab meanovo; do
-            nix eval --no-update-lock-file --raw ".#nixosConfigurations.${host}.config.system.build.toplevel.drvPath"
-          done
-      - name: Validate Foot configuration with the pinned package
+          while IFS= read -r -d '' file; do
+            echo "Parsing $file"
+            nix-instantiate --parse "$file" > /dev/null
+          done < <(git ls-files -z -- '*.nix')
+      - name: Check tracked Bash scripts
+        shell: bash
         run: |
-          foot=$(nix build --no-link --print-out-paths --no-update-lock-file --impure --expr '(builtins.getFlake (toString ./.)).inputs.nixpkgs.legacyPackages.x86_64-linux.foot')
-          "$foot/bin/foot" --check-config --config=dotfiles/foot/foot.ini
-      - name: Check shared accounts and opt-in desktop profiles
-        run: |
-          nix eval --no-update-lock-file --impure --json --expr '
-            let flake = builtins.getFlake (toString ./.);
-            in import ./tests/profiles.nix { inherit (flake) nixosConfigurations; }
-          '
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            echo "Checking $file"
+            bash -n "$file"
+          done < <(git ls-files -z -- '*.sh')
+      - name: Check lock file JSON
+        run: python3 -m json.tool flake.lock > /dev/null

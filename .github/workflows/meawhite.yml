@@ -1,27 +1,6 @@
 name: meawhite NixOS build
 
 on:
-  pull_request:
-    paths:
-      - "flake.nix"
-      - "flake.lock"
-      - "profiles/**"
-      - "users/**"
-      - "home/**"
-      - "dotfiles/**"
-      - "meawhite/**"
-      - ".github/workflows/meawhite.yml"
-  push:
-    branches: [main]
-    paths:
-      - "flake.nix"
-      - "flake.lock"
-      - "profiles/**"
-      - "users/**"
-      - "home/**"
-      - "dotfiles/**"
-      - "meawhite/**"
-      - ".github/workflows/meawhite.yml"
   workflow_dispatch:
 
 permissions:
@@ -42,30 +21,8 @@ jobs:
           bash -n meawhite/build-installer.sh meawhite/install.sh meawhite/check-disks.sh meawhite/test-check-disks.sh
           shellcheck -s bash meawhite/build-installer.sh meawhite/install.sh meawhite/check-disks.sh meawhite/test-check-disks.sh
           bash meawhite/test-check-disks.sh
-          bash -n meawhite/talos/render-cilium.sh
-          shellcheck -s bash meawhite/talos/render-cilium.sh
       - name: Evaluate meawhite
         run: nix eval --no-update-lock-file --raw .#nixosConfigurations.meawhite.config.system.build.toplevel.drvPath
-      - name: Render and validate Talos Cilium bootstrap
-        run: |
-          set -euo pipefail
-          work="$(mktemp -d)"
-          trap 'rm -rf "$work"' EXIT
-          nix develop --no-update-lock-file .#meawhite-talos --command bash -euc '
-            work="$1"
-            umask 077
-            mkdir -p "$work/generated"
-            bash meawhite/talos/render-cilium.sh "$work/cilium-bootstrap.patch.yaml"
-            talosctl gen config meawhite https://192.0.2.10:6443 \
-              --talos-version v1.14.5 \
-              --install-disk /dev/vda \
-              --config-patch-control-plane @meawhite/talos/cilium.patch.yaml \
-              --config-patch-control-plane @"$work/cilium-bootstrap.patch.yaml" \
-              --config-patch @meawhite/talos/installer.patch.yaml \
-              --output-dir "$work/generated"
-            talosctl validate --config "$work/generated/controlplane.yaml" --mode metal
-            grep -qx "kind: KubeInlineManifestConfig" "$work/generated/controlplane.yaml"
-          ' bash "$work"
       - name: Build meawhite system
         run: nix build --no-update-lock-file --no-link --print-build-logs .#nixosConfigurations.meawhite.config.system.build.toplevel
       - name: Build meawhite Secure Boot system

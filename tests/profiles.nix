@@ -1,6 +1,12 @@
 { nixosConfigurations }:
 let
   workstations = [ "meatab" "meanovo" ];
+  # MicroVM appliances intentionally omit accounts and Home Manager. Keep
+  # these expectations scoped to installed machines composed by mkHost.
+  installedHosts = builtins.listToAttrs (map (name: {
+    inherit name;
+    value = nixosConfigurations.${name};
+  }) [ "meablack" "meablack-secure" "meawhite" "meawhite-secure" "meatab" "meanovo" ]);
 in
 builtins.mapAttrs (name: host:
   let
@@ -32,4 +38,4 @@ builtins.mapAttrs (name: host:
   assert require (config.security.sudo.wheelNeedsPassword) "sudo must continue requiring a password";
   assert require (config.services.openssh.settings.PermitRootLogin == (if desktop then "no" else "prohibit-password")) "root SSH policy changed";
   true
-) nixosConfigurations
+) installedHosts
