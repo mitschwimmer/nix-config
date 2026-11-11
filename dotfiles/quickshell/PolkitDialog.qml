@@ -100,7 +100,7 @@ FloatingWindow {
             color: root.palette.foreground
             font.family: root.palette.font
             font.pixelSize: 13
-            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+            wrapMode: Text.Wrap
         }
 
         Text {
@@ -211,7 +211,7 @@ FloatingWindow {
                 ? root.palette.red : root.palette.muted
             font.family: root.palette.font
             font.pixelSize: 11
-            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+            wrapMode: Text.Wrap
         }
 
         Text {
