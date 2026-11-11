@@ -22,7 +22,7 @@ configuration live together under `kubernetes/`.
 | `flake.nix`, `flake.lock` | Host/guest composition and pinned dependencies |
 | `meablack/microvms.nix`, `meawhite/microvms.nix` | Local activation, guest selection, bridge and uplink settings |
 | `profiles/microvm-host.nix` | Declarative guest lifecycle and TAP attachment |
-| `kubernetes/nodes.nix` | Stable names/MACs, placement and resource allocation |
+| `kubernetes/nodes.nix` | Stable names/MACs/vsock CIDs, placement and resource allocation |
 | `kubernetes/guest.nix` | Shared guest networking, persistent state and SSH |
 | `tests/microvms.nix` | Evaluation of topology, identities, storage and enabled host paths |
 | `docs/` | Cluster bootstrap, operation, recovery and acceptance records |
@@ -46,6 +46,10 @@ five guest files merely to hold different names and resource values.
 
 These MACs are newly allocated configuration values, not observed leases.
 Check uniqueness and create DHCP reservations before deploying cluster nodes.
+Each guest also has an explicit, unique vsock CID (1001-1005 for cluster nodes,
+1099 for k8s-test). Values 0-2 are reserved. These enable Cloud Hypervisor's
+systemd-notify readiness path and must not collide with other MicroVMs running
+on the same physical host.
 Review resource allocations against host capacity and meablack's inference
 workload. Image sizes are sparse capacity limits, not reserved physical space.
 

@@ -25,9 +25,13 @@ in
     (builtins.length (builtins.attrNames cluster) == 5
       && builtins.length (lib.filter (n: n.role == "server") (builtins.attrValues cluster)) == 3
       && builtins.length (lib.filter (n: n.role == "server" && n.host == "meawhite") (builtins.attrValues cluster)) == 2);
-  identity = check "unique stable MACs and valid TAP names"
+  identity = check "unique stable MACs, vsock CIDs and valid TAP names"
     (builtins.length (lib.unique (map (n: n.mac) (builtins.attrValues nodes))) == builtins.length (builtins.attrNames nodes)
+      && builtins.length (lib.unique (map (n: n.vsockCid) (builtins.attrValues nodes))) == builtins.length (builtins.attrNames nodes)
+      && lib.all (n: n.vsockCid >= 3) (builtins.attrValues nodes)
+      && lib.all (name: guests.${name}.microvm.vsock.cid == nodes.${name}.vsockCid) (builtins.attrNames nodes)
       && lib.all (name: builtins.stringLength (builtins.head guests.${name}.microvm.interfaces).id <= 15) (builtins.attrNames nodes));
+  # K3s activation is staged separately; this suite checks guest foundations only.
   guests = lib.mapAttrs (name: c: check "${name}: raw persistent state, full kernel and no NAT"
     (c.networking.hostName == name
       && c.microvm.hypervisor == "cloud-hypervisor"
@@ -37,8 +41,7 @@ in
       && (builtins.head c.microvm.interfaces).type == "tap"
       && (builtins.head c.microvm.volumes).imageType == "raw"
       && c.fileSystems."/var".neededForBoot
-      && (builtins.head c.services.openssh.hostKeys).path == "/var/lib/ssh/ssh_host_ed25519_key"
-      && !c.services.k3s.enable)) guests;
+      && (builtins.head c.services.openssh.hostKeys).path == "/var/lib/ssh/ssh_host_ed25519_key")) guests;
   hosts = lib.mapAttrs (name: c: check "${name}: opt-in guests without mass restarts"
     (builtins.length (builtins.attrNames c.microvm.vms) == (if name == "meawhite" then 3 else 2)
       && lib.all (vm: !vm.restartIfChanged) (builtins.attrValues c.microvm.vms)

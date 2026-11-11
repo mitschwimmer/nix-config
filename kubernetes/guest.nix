@@ -27,6 +27,8 @@
   microvm = {
     hypervisor = "cloud-hypervisor";
     inherit (node) vcpu mem;
+    # Stable and distinct for every guest so Cloud Hypervisor can report readiness.
+    vsock.cid = node.vsockCid;
     # The normal NixOS kernel, including loadable container/eBPF/LVM modules.
     kernel = config.boot.kernelPackages.kernel;
     # Self-contained read-only store image; no host virtiofs dependency.
