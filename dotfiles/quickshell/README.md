@@ -50,40 +50,16 @@ passwords, keyboard focus and Enter-to-submit work.
 
 The login display manager is still Ly; Quickshell runs inside the Niri session.
 
-## Wallpaper diagnostics
+## Wallpaper loading errors
 
-The wallpaper logs its initial selection and every rotation as
-`Wallpaper selected:` followed by the full file URL. Both image layers report
-`Wallpaper failed:` on a loading error, including the file URL, output and layer.
-The next wallpaper is preloaded in the hidden layer, so a failure can be logged
-before that image becomes visible. Multiple outputs can report the same failure.
+If the selected wallpaper fails to load, a small message at the bottom left
+shows its filename using the shell's shared font and light/dark palette. The
+message remains readable above the wallpaper's blur and dimming effects and
+does not consume pointer input.
 
-Read or follow the running workstation shell's logs:
-
-```sh
-qs log -c workstation --no-color
-qs log -c workstation --no-color -f
-```
-
-To show only these diagnostics while following:
-
-```sh
-qs log -c workstation --no-color -f | rg --line-buffered 'Wallpaper (selected|failed):'
-```
-
-Quickshell stores per-instance logs under
-`$XDG_RUNTIME_DIR/quickshell/by-id/<instance-id>/` (normally beneath
-`/run/user/$(id -u)/`): `log.log` is text and `log.qslog` is the detailed log read
-by `qs log`. These are runtime files, not persistent logs across reboots.
-To retain a diagnostic session:
-
-```sh
-qs log -c workstation --no-color -f | tee ~/quickshell-wallpaper.log
-```
-
-When diagnosing a black wallpaper, match the most recent selection to any loading
-error for that URL. A selection message alone does not establish successful
-decoding or rendering.
+Only the selected image can show an error message. A failed preload remains
+silent until that image is selected; selecting a working image clears the
+message. Long filenames wrap so the complete name stays visible.
 
 ## Manual checks
 
