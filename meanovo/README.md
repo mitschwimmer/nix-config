@@ -125,6 +125,21 @@ firmware console mode (`bootctl status`) and supported DRM modes in
 mode change. Prefer matching the firmware mode, greeter mode and Niri
 output mode rather than forcing a resolution without hardware evidence.
 
+## Boot menu retention
+
+Both `meanovo` (systemd-boot) and `meanovo-secure` (Lanzaboote) retain
+at most **four** NixOS generations in the boot menu. Lanzaboote inherits
+`boot.loader.systemd-boot.configurationLimit`. The limit is applied at
+the next **successful** bootloader installation, not by evaluating the flake.
+This does not delete NixOS generations or store paths from disk.
+
+Do not apply this retention reduction while the signed bootloader is in a
+failed or partially installed state. First create and back up the local sbctl
+signing keys, verify an intact known-good boot path and an external rescue
+option, and complete a successful bootloader installation. Confirm the remaining
+entries with `sudo bootctl list` before rebooting; do not depend solely on
+one of the old generations that the limit may remove.
+
 ## Recovery and validation
 
 Before activating this variant:
