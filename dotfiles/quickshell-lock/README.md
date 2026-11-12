@@ -11,8 +11,9 @@ windows. The snapshot is frozen: the actual desktop is neither transparent nor
 interactive behind the lock. Newly connected outputs and failed captures use
 opaque black. The image is only rendered through the blur effect.
 
-Snapshots are captured concurrently at half resolution with a shared one-second
-deadline. They exist only inside a mode-0700 directory in `$XDG_RUNTIME_DIR`;
+Snapshots are captured by a small shell script using Niri, Grim and jq. Captures
+run concurrently at half resolution, each with a one-second timeout. They exist
+only inside a mode-0700 directory in `$XDG_RUNTIME_DIR`;
 systemd removes the directory on unlock, crash or startup timeout. They are not
 written to the home directory or screenshot history.
 
@@ -47,7 +48,7 @@ There is no automatic idle timeout, automatic suspend or unauthenticated unlock 
 ## Validation
 
 ```sh
-python3 -m unittest discover -s tests -p 'lock*_test.py'
+bash -n dotfiles/quickshell-lock/capture.sh
 nix eval --no-update-lock-file --raw .#nixosConfigurations.meanovo.config.system.build.toplevel.drvPath
 nix eval --no-update-lock-file --raw .#nixosConfigurations.meatab.config.system.build.toplevel.drvPath
 nix eval --no-update-lock-file --impure --json --expr '
@@ -72,5 +73,4 @@ Keep TTY/SSH access for the first real-session checks. Verify:
 - Restart the ordinary `workstation` Quickshell process while locked and confirm
   the separate locker remains usable.
 
-Unit tests do not establish PAM, compositor or suspend correctness; these checks
-require the physical Niri session.
+PAM, compositor and suspend correctness require the physical Niri session.

@@ -14,9 +14,9 @@ let
   };
   start = pkgs.writeShellApplication {
     name = "workstation-lock-start";
-    runtimeInputs = [ pkgs.python3 pkgs.niri pkgs.grim ];
-    text = ''
-      exec python3 ${../../dotfiles/quickshell-lock/capture.py} ${lib.getExe pkgs-unstable.quickshell}
+    runtimeInputs = [ pkgs.coreutils pkgs.jq pkgs.niri pkgs.grim ];
+    text = builtins.readFile ../../dotfiles/quickshell-lock/capture.sh + ''
+      exec ${lib.getExe pkgs-unstable.quickshell} -c workstation-lock
     '';
   };
 in
