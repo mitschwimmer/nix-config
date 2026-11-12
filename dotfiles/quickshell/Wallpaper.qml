@@ -27,6 +27,7 @@ Scope {
 
     required property var niriState
     required property var sidebar
+    required property var palette
 
     property var wallpaperOrder: []
     property int wallpaperIndex: 0
@@ -34,6 +35,15 @@ Scope {
     property url wallpaperB: ""
     property bool showB: false
     property bool wallpapersInitialized: false
+
+    function fileName(url) {
+        const name = url.toString().split("/").pop()
+        try {
+            return decodeURIComponent(name)
+        } catch (error) {
+            return name
+        }
+    }
 
     function shuffled(values) {
         const result = [...values]
@@ -121,6 +131,7 @@ Scope {
         PanelWindow {
             id: wallpaper
             required property var modelData
+            readonly property var currentImage: root.showB ? imageB : imageA
             readonly property bool muted: root.niriState.overviewOpen
                 || root.niriState.activeWorkspaceHasWindow(modelData.name)
 
@@ -171,6 +182,7 @@ Scope {
                 }
 
                 Image {
+                    id: imageA
                     anchors.fill: parent
                     source: root.wallpaperA
                     fillMode: Image.PreserveAspectCrop
@@ -187,6 +199,7 @@ Scope {
                 }
 
                 Image {
+                    id: imageB
                     anchors.fill: parent
                     source: root.wallpaperB
                     fillMode: Image.PreserveAspectCrop
@@ -215,6 +228,33 @@ Scope {
                             : root.lightenDuration
                         easing.type: Easing.OutQuad
                     }
+                }
+            }
+
+            // Keep the message sharp and readable above wallpaper effects.
+            Rectangle {
+                anchors.left: parent.left
+                anchors.bottom: parent.bottom
+                anchors.margins: 24
+                width: Math.min(errorText.implicitWidth + 32, parent.width - 48)
+                height: errorText.implicitHeight + 28
+                radius: 12
+                color: root.palette.surface
+                border.width: 1
+                border.color: root.palette.line
+                visible: wallpaper.currentImage.status === Image.Error
+
+                Text {
+                    id: errorText
+                    anchors.centerIn: parent
+                    width: parent.width - 32
+                    text: "Could not load wallpaper “"
+                        + root.fileName(wallpaper.currentImage.source) + "”."
+                    textFormat: Text.PlainText
+                    font.family: root.palette.font
+                    font.pixelSize: 12
+                    color: root.palette.muted
+                    wrapMode: Text.WrapAnywhere
                 }
             }
         }

@@ -122,18 +122,25 @@ second authentication factor. SDDM still requires an account password.
 console mode. The existing `quiet`/`splash` kernel parameters and
 Plymouth are retained.
 
-This **does not prove a flicker-free boot**: kernel DRM/KMS, Plymouth,
-the SDDM greeter (Weston on the new workstation profile) and Niri may
-each select a display mode. A change of resolution or refresh rate at a
-handoff may still cause a black flash; complete elimination depends on
-the laptop's EFI GOP and graphics driver modes. Do not force an `i915`
-or `xe` early-KMS driver without confirming the actual graphics device.
+The detected Panther Lake Intel GPU (8086:b0a0) uses the `xe` driver,
+which the host initializes in its initrd before Plymouth.
 
-After the SDDM rollout, record the kernel graphics driver (`lspci -nnk`),
-firmware console mode (`bootctl status`) and supported DRM modes in
-`/sys/class/drm/`, then observe the boot stages to identify any remaining
-mode change. Prefer matching the firmware mode, greeter mode and Niri
-output mode rather than forcing a resolution without hardware evidence.
+The SDDM Weston greeter has its own display scaling, separate from Niri.
+`meanovo/configuration.nix` retains NixOS's default Weston keyboard and
+libinput settings and adds an `[output]` section for the built-in
+`eDP-1` OLED panel with `scale=2`. External displays remain at Weston's
+default 1x. Weston uses integer output scales, so 2x approximates Niri's
+1.75x internal-panel scale; it is not an exact match.
+
+The SDDM theme itself is unchanged. Its test mode runs in the current
+Niri session and **does not test the Weston output scaling**. Use
+`nixos-rebuild boot`, verify the signed boot artifacts, and reboot to
+check the real greeter while retaining TTY access and a known-good signed
+generation.
+
+These settings do **not** guarantee flicker-free boot: kernel DRM/KMS,
+Plymouth, Weston and Niri can still use different display modes or refresh
+rates during handoff.
 
 ## Boot menu retention
 
