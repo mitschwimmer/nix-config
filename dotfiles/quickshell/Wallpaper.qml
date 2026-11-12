@@ -26,6 +26,7 @@ Scope {
     // -----------------------------------------------------------------------
 
     required property var niriState
+    required property var sidebar
     required property var palette
 
     property var wallpaperOrder: []
@@ -150,7 +151,9 @@ Scope {
             WlrLayershell.namespace: "quickshell-niri-wallpaper"
 
             Item {
-                anchors.fill: parent
+                x: root.sidebar.offsetFor(wallpaper.modelData.name)
+                width: parent.width
+                height: parent.height
                 layer.enabled: true
                 layer.effect: MultiEffect {
                     saturation: wallpaper.muted ? root.occupiedSaturation : 0
