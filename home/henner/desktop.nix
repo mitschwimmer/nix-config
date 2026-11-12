@@ -16,7 +16,6 @@
     (with pkgs; [
       # Desktop environment
       foot
-      fuzzel
       pavucontrol
       xwayland-satellite
       nautilus

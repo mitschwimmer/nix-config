@@ -2,11 +2,15 @@
 
 Home Manager installs the named `workstation` Quickshell configuration from this
 directory. Niri starts it with `quickshell -c workstation`. It provides a
-wallpaper, an edge-revealed status drawer, notification popups and an on-screen
-display, using the palette in `Palette.qml`, with red (`#D71921`) reserved for small accents.
+wallpaper, an application launcher, an edge-revealed status drawer, notification
+popups and an on-screen display, using the palette in `Palette.qml`, with red
+(`#D71921`) reserved for small accents.
 
 - `shell.qml`: composition root.
 - `NiriState.qml`: shared Niri event stream, focused output and workspace state.
+- `Launcher.qml`: application index, search, selection and launcher IPC.
+- `LauncherLogic.js`: GUI entry filtering and search ranking.
+- `LauncherWindow.qml`: compact search panel, grayscale icons and blurred backdrop.
 - `Wallpaper.qml`: existing per-output wallpaper rotation and effects.
 - `Sidebar.qml`: edge sensors, reveal state, timing and shared wallpaper offset.
 - `SidebarWindow.qml`: sliding status drawer on the selected output.
@@ -24,6 +28,54 @@ display, using the palette in `Palette.qml`, with red (`#D71921`) reserved for s
 
 Notifications and the OSD appear on the focused monitor, or the first monitor
 until Niri reports one. No permanent bar or notification history is kept.
+
+## Application launcher
+
+`Mod+D` toggles a 448 logical-pixel-wide launcher on the focused monitor (or the
+first monitor until Niri reports one). It closes the status drawer and focuses
+search immediately. Up/Down selects a result, Enter launches, and Escape,
+`Mod+D` or clicking the backdrop closes it. Click a row to launch directly;
+scroll to browse beyond the six visible rows. Closing clears the search.
+Monitor hotplug closes the launcher and releases keyboard focus.
+
+The panel uses `Palette.qml` in both appearances, with normal letter spacing for
+the title-case heading and fully desaturated 20-pixel application icons. Missing
+icons fall back to the application's initial. Set `showIcons: false` on the
+`Launcher` in `shell.qml` for an icon-free list.
+
+Quickshell indexes desktop applications from the session's XDG data paths,
+including exported Flatpak desktop files. Hidden/NoDisplay entries are omitted;
+the launcher additionally excludes `Terminal=true` applications, so terminal
+editors and TUIs do not appear. Terminal emulators remain eligible as GUI apps.
+Incorrectly labelled entries can be excluded with `excludedIds` on `Launcher`,
+using desktop IDs without the `.desktop` suffix. No shell-command mode or PATH
+scan is provided. All query words must match the name, generic name or keywords;
+exact names rank before prefixes, substrings and metadata. Empty searches sort
+alphabetically. Launching uses the desktop entry's parsed command and working
+directory through Quickshell's native `execute()`.
+
+The full-output layer dims and requests native background blur only while open.
+Niri's `quickshell-launcher` layer rule disables xray so the blur includes
+application windows instead of showing only wallpaper. Non-xray blur is
+experimental in Niri 26.04 and costs more than wallpaper-only blur. If it causes
+artifacts or excessive GPU use, set `blur false` in that rule; the dimmed backdrop
+continues to work. Other monitors are left unobscured.
+
+```sh
+qs -c workstation ipc call launcher toggle
+qs -c workstation ipc call launcher open
+qs -c workstation ipc call launcher close
+node --test tests/launcher.test.cjs
+```
+
+After switching generations, verify light/dark appearance, grayscale and missing
+icons, keyboard navigation through more than six results, scrolling, empty/no
+matches, long names, and mouse launch/dismissal. Check that GUI apps launch with
+the right working directory, Helix/TUIs stay absent, installing/removing desktop
+apps updates the list, and both Escape and `Mod+D` return keyboard focus to the
+previous application. Test each output at its configured scale, hotplug while
+open, and blur over changing application content. Compare with `blur false` if
+needed. These focus and compositor checks require a real Niri session.
 
 ## Status drawer
 
@@ -127,4 +179,4 @@ The exposed-edge and battery-formatting regression checks run without a desktop:
 nix shell nixpkgs#nodejs -c node --test tests/sidebar.test.cjs
 ```
 
-The lock screen and launcher remain Swaylock and Fuzzel.
+The lock screen remains Swaylock.

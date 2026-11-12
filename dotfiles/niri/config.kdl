@@ -116,6 +116,16 @@ window-rule {
     open-focused true
 }
 
+// Blur applications under the launcher, rather than showing only wallpaper.
+// Keep this scoped: non-xray blur is more expensive than the default xray blur.
+layer-rule {
+    match namespace="^quickshell-launcher$"
+    background-effect {
+        blur true
+        xray false
+    }
+}
+
 window-rule {
     geometry-corner-radius 8
     clip-to-geometry true
@@ -130,7 +140,7 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
     Mod+T hotkey-overlay-title="Open a Terminal" { spawn "foot"; }
     Mod+Shift+T hotkey-overlay-title="Toggle light/dark appearance" { spawn "qs" "-c" "workstation" "ipc" "call" "theme" "toggle"; }
-    Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
+    Mod+D repeat=false hotkey-overlay-title="Open Applications" { spawn "qs" "-c" "workstation" "ipc" "call" "launcher" "toggle"; }
     Super+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock" "-Kc000000"; }
 
     XF86AudioRaiseVolume allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "volumeUp"; }
