@@ -39,3 +39,5 @@ jobs:
           done < <(git ls-files -z -- '*.sh')
       - name: Check lock file JSON
         run: python3 -m json.tool flake.lock > /dev/null
+      - name: Check desktop logic
+        run: node --test tests/*.test.cjs
