@@ -45,10 +45,7 @@ output "LG Electronics LG HDR 4K 0x0003CF4A" {
 }
 
 // office (high refresh rate)
-output "LG Electronics LG ULTRAGEAR+ 307NTZN8K861" {
-	// display without position will be placed on the right
-	// which I do not want
-	position x=0 y=0
+output "LG Electronics LG ULTRAGEAR+ 308NTSUF9550" {
     scale 1.0
     layout {
       default-column-width { proportion 0.4; }
