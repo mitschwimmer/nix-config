@@ -15,6 +15,8 @@ popups and an on-screen display, using the palette in `Palette.qml`, with red
 - `Sidebar.qml`: edge sensors, reveal state, timing and shared wallpaper offset.
 - `SidebarWindow.qml`: sliding status drawer on the selected output.
 - `DesktopStatus.qml`: native UPower, NetworkManager and Bluetooth status.
+- `AudioState.qml`: PipeWire devices, system defaults, output volume and mute.
+- `SidebarAudio.qml`: inline device selectors and mouse volume controls.
 - `DotClock.qml`: font-independent dot-matrix clock.
 - `SidebarLogic.js`: exposed monitor edges and battery estimate formatting.
 - `Notifications.qml`: freedesktop notification server and popup state.
@@ -85,7 +87,9 @@ no sensors, including the shared portions of staggered layouts. The invisible
 sensors occupy two logical pixels, reserve no desktop space and take no keyboard
 focus. The drawer shows local date/time (without seconds), system battery charge
 and time estimate, the connected Wi-Fi network and signal, and connected Bluetooth
-devices. Missing hardware and disabled radios have explicit fallback states.
+devices. It also provides an appearance button, audio input/output selectors,
+and output volume and mute controls. Missing hardware and disabled radios have
+explicit fallback states.
 
 The drawer and wallpaper share a 220 ms animation. Only the wallpaper translates;
 application windows retain their size and position. Wallpaper rotation,
@@ -101,10 +105,30 @@ rebuild the edge sensors. Timing and width are defined at the top of `Sidebar.qm
 UPower and BlueZ are enabled in the workstation profile; NetworkManager is already
 enabled. Quickshell 0.3.0 from the pinned Nixpkgs provides the native networking API.
 
+### Audio controls
+
+Click the current output or input to expand its device list; click a device to
+make it the system default. A small red dot marks the active default. Lists stay
+inside the drawer’s scrollable area and close when the drawer is dismissed.
+Only audio devices are listed, excluding application streams. Unavailable devices
+disappear on disconnect and the selection follows PipeWire’s fallback.
+
+The slider adjusts the current default output from 0–100%; increasing it above
+zero unmutes that output. The separate Mute/Unmute button preserves its level.
+Volume, mute and selection follow external changes, including the media keys.
+The sidebar and OSD both use Quickshell’s native PipeWire state.
+
+Device selection writes PipeWire’s preferred default, the same system choice as
+pavucontrol’s “Set as fallback” in Output Devices / Input Devices. Changing that
+choice in either tool updates the drawer. Per-application routing and hardware
+profiles/ports remain available in pavucontrol; an explicitly routed application
+may retain its own device rather than follow the default.
+
 ## Appearance and authentication
 
-`Mod+Shift+T` switches light/dark mode and updates the GNOME color-scheme
-setting used by GTK applications. The shell follows changes to the setting
+The drawer’s “Light mode” / “Dark mode” button switches appearance and updates
+the GNOME color-scheme setting used by GTK applications. It replaces the former
+`Mod+Shift+T` binding. The shell follows changes to the setting
 made by other tools. The same switch is exposed through Quickshell IPC:
 
 ```sh
@@ -169,6 +193,17 @@ open, scrolling on a short output, long network/device names, and the 15-second
 stationary-pointer timeout both inside the drawer and directly on the edge.
 Verify the wallpaper returns exactly to its original position, applications
 receive input outside the drawer and keyboard focus stays on the application.
+Check the appearance button in both modes and confirm GTK applications and
+external dconf changes stay synchronized. Confirm `Mod+Shift+T` no longer changes
+the theme. For audio, select outputs and inputs in the drawer, then use
+pavucontrol’s “Set as fallback” for each direction and verify the selected row
+follows. Test slider click/drag, mute/unmute, media-key and pavucontrol volume
+updates, output switching while muted, device disconnect/reconnect, and a session
+with no audio devices. Verify new playback/recording uses the chosen defaults;
+check application-specific routes separately in pavucontrol. Expand long device
+lists and scroll on a short output, checking that controls remain clickable and
+the drawer does not close during interaction.
+
 Check battery charging/unplugging, absent battery, Wi-Fi reconnect/rfkill, Bluetooth
 connect/disconnect, light/dark mode and a midnight date change. Layer-shell input
 and animation behavior require testing in the real Niri session.

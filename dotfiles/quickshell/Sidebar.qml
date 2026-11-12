@@ -72,6 +72,7 @@ Scope {
     }
 
     DesktopStatus { id: desktopStatus }
+    AudioState { id: audioState }
 
     Variants {
         model: root.edges
@@ -125,6 +126,7 @@ Scope {
             sidebar: root
             palette: root.palette
             status: desktopStatus
+            audio: audioState
         }
     }
 }
