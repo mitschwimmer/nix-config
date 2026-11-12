@@ -41,3 +41,5 @@ jobs:
         run: python3 -m json.tool flake.lock > /dev/null
       - name: Check desktop logic
         run: node --test tests/*.test.cjs
+      - name: Check lock screen capture failures
+        run: python3 -m unittest discover -s tests -p 'lock*_test.py'

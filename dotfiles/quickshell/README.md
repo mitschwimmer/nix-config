@@ -103,7 +103,7 @@ after 15 seconds; a pointer parked on the trigger must leave the edge before
 it can reveal the drawer again. Monitor layout changes close the drawer and
 rebuild the edge sensors. Timing and width are defined at the top of `Sidebar.qml`.
 UPower and BlueZ are enabled in the workstation profile; NetworkManager is already
-enabled. Quickshell 0.3.0 from the pinned Nixpkgs provides the native networking API.
+enabled. Quickshell 0.3.2 from the pinned unstable input provides the native networking API.
 
 ### Audio controls
 
@@ -214,4 +214,6 @@ The exposed-edge and battery-formatting regression checks run without a desktop:
 nix shell nixpkgs#nodejs -c node --test tests/sidebar.test.cjs
 ```
 
-The lock screen remains Swaylock.
+The separate [Quickshell lock screen](../quickshell-lock/README.md) shares the
+dot-matrix clock and visual style. It shows blurred desktop snapshots and uses
+Swaylock for emergency recovery.

@@ -59,6 +59,11 @@ in
 
   programs.niri.enable = true;
   security.polkit.enable = true;
+  security.pam.services.quickshell-lock = { };
+  security.pam.services.swaylock = { };
+  # Allow the before-sleep hook to wait for the compositor's lock acknowledgement,
+  # including the bounded snapshot/startup timeout and emergency Swaylock fallback.
+  services.logind.settings.Login.InhibitDelayMaxSec = "15s";
   xdg.portal.xdgOpenUsePortal = true;
 
   services.displayManager = {

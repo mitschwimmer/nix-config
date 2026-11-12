@@ -1,5 +1,7 @@
 { pkgs, pkgs-unstable, ... }:
 {
+  imports = [ ./lockscreen.nix ];
+
   xdg.configFile = {
     "foot/foot.ini".source = ../../dotfiles/foot/foot.ini;
     "niri/config.kdl".source = ../../dotfiles/niri/config.kdl;
@@ -8,6 +10,7 @@
 
   programs.quickshell = {
     enable = true;
+    package = pkgs-unstable.quickshell;
     configs.workstation = ../../dotfiles/quickshell;
     activeConfig = "workstation";
   };
