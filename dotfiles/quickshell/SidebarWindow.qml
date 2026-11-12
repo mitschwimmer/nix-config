@@ -1,6 +1,7 @@
 import Quickshell
 import Quickshell.Wayland
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Shapes
 
@@ -10,6 +11,7 @@ PanelWindow {
     required property var sidebar
     required property var palette
     required property var status
+    required property var audio
     readonly property bool isTargetOutput: sidebar.outputName === modelData.name
 
     screen: modelData
@@ -79,7 +81,37 @@ PanelWindow {
                     text: Qt.formatDateTime(clock.date, "HH:mm")
                     color: root.palette.foreground
                 }
-                Item { width: 1; height: Math.max(28, drawer.height * 0.14) }
+                Item { width: 1; height: 20 }
+
+                Button {
+                    id: appearance
+                    width: parent.width
+                    implicitHeight: 44
+                    text: root.palette.dark ? "Light mode" : "Dark mode"
+                    Accessible.name: "Switch to " + text.toLowerCase()
+                    onClicked: { root.palette.setDark(!root.palette.dark); root.sidebar.activity() }
+                    background: Rectangle {
+                        radius: 8
+                        color: appearance.hovered || appearance.down ? root.palette.line : root.palette.tile
+                    }
+                    contentItem: Text {
+                        text: appearance.text
+                        font.family: root.palette.font
+                        font.pixelSize: 12
+                        color: root.palette.foreground
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+                Item { width: 1; height: 4 }
+                SidebarAudio {
+                    width: parent.width
+                    palette: root.palette
+                    audio: root.audio
+                    sidebar: root.sidebar
+                }
+                Rectangle { width: parent.width; height: 1; color: root.palette.line }
+                Item { width: 1; height: 4 }
 
                 Repeater {
                     model: [
