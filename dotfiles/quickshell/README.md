@@ -216,4 +216,4 @@ nix shell nixpkgs#nodejs -c node --test tests/sidebar.test.cjs
 
 The separate [Quickshell lock screen](../quickshell-lock/README.md) shares the
 dot-matrix clock and visual style. It shows blurred desktop snapshots and uses
-Swaylock for emergency recovery.
+Quickshell as the sole screen locker.

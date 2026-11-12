@@ -23,7 +23,6 @@
       xwayland-satellite
       nautilus
       adwaita-icon-theme
-      swaylock
       brightnessctl
       dconf
       sushi

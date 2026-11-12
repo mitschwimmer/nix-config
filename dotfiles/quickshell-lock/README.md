@@ -27,15 +27,22 @@ PAM conversation after a short delay. PAM errors keep the screen locked.
   confirms coverage. Repeated requests share the same systemd service.
 - `loginctl lock-session`: handled by Swayidle using the same entry point.
 - Suspend: Swayidle's `-w` before-sleep hook waits for that acknowledgement.
-  Logind's delay-inhibitor budget is 15 seconds; Quickshell startup is bounded
-  to five seconds, followed by a bounded emergency Swaylock start.
-- `Super+Alt+L`: start the emergency Swaylock service, including while locked.
-  This can recover Niri's solid-color screen after a dead locker. A running
-  healthy locker keeps ownership of the lock.
+  Logind's delay-inhibitor budget is 10 seconds; Quickshell startup is bounded
+  to five seconds, with two seconds allowed for process cleanup on failure.
 
-Startup failure and crashes trigger `workstation-lock-fallback.service` through
-systemd `OnFailure`. Swaylock stays installed with an explicit PAM service. There
-is no automatic idle timeout, automatic suspend or unauthenticated unlock IPC.
+Quickshell is the only screen locker. If startup fails before acquiring the lock,
+the command reports failure and the session remains unlocked. If it crashes after
+acquiring the lock, Niri keeps the session locked on its solid-color background.
+There is no automatic restart or second locker. To recover, switch to another TTY
+with `Ctrl+Alt+F3`, log in as the same user and restart the locker:
+
+```sh
+systemctl --user restart workstation-lock.service
+```
+
+Then return to the graphical TTY. If Quickshell itself cannot launch, diagnose
+the service from the TTY with `journalctl --user -u workstation-lock.service`.
+There is no automatic idle timeout, automatic suspend or unauthenticated unlock IPC.
 
 ## Validation
 
@@ -60,8 +67,8 @@ Keep TTY/SSH access for the first real-session checks. Verify:
   suspend immediately after requesting a lock.
 - With the session locked, kill the locker main process with
   `systemctl --user kill --signal=SIGKILL --kill-whom=main workstation-lock.service`.
-  Confirm the desktop stays inaccessible and Swaylock takes over. Test the
-  emergency binding as well. Never use a plain service stop as an unlock action.
+  Confirm the desktop stays inaccessible and recover by restarting Quickshell
+  from another TTY. Never use a plain service stop as an unlock action.
 - Restart the ordinary `workstation` Quickshell process while locked and confirm
   the separate locker remains usable.
 

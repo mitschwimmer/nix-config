@@ -141,7 +141,6 @@ binds {
     Mod+T hotkey-overlay-title="Open a Terminal" { spawn "foot"; }
     Mod+D repeat=false hotkey-overlay-title="Open Applications" { spawn "qs" "-c" "workstation" "ipc" "call" "launcher" "toggle"; }
     Super+L repeat=false hotkey-overlay-title="Lock the Screen" { spawn "workstation-lock"; }
-    Super+Alt+L repeat=false allow-when-locked=true hotkey-overlay-title="Recover Screen Locker" { spawn "systemctl" "--user" "start" "workstation-lock-fallback.service"; }
 
     XF86AudioRaiseVolume allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "volumeUp"; }
     XF86AudioLowerVolume allow-when-locked=true { spawn "qs" "-c" "workstation" "ipc" "call" "osd" "volumeDown"; }

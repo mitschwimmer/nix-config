@@ -9,12 +9,7 @@ let
     name = "workstation-lock";
     runtimeInputs = [ pkgs.systemd ];
     text = ''
-      if systemctl --user is-active --quiet workstation-lock-fallback.service; then
-        exit 0
-      fi
-      if ! systemctl --user start workstation-lock.service; then
-        systemctl --user start workstation-lock-fallback.service
-      fi
+      systemctl --user start workstation-lock.service
     '';
   };
   start = pkgs.writeShellApplication {
@@ -34,7 +29,6 @@ in
       Description = "Quickshell session lock";
       PartOf = [ "graphical-session.target" ];
       After = [ "graphical-session.target" ];
-      OnFailure = [ "workstation-lock-fallback.service" ];
     };
     Service = {
       Type = "notify";
@@ -49,18 +43,6 @@ in
       UMask = "0077";
       TimeoutStartSec = 5;
       TimeoutStopSec = 2;
-    };
-  };
-
-  systemd.user.services.workstation-lock-fallback = {
-    Unit = {
-      Description = "Emergency Swaylock session lock";
-      PartOf = [ "graphical-session.target" ];
-    };
-    Service = {
-      Type = "forking";
-      ExecStart = "${pkgs.swaylock}/bin/swaylock --daemonize -K -c 000000";
-      TimeoutStartSec = 5;
     };
   };
 
