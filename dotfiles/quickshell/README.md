@@ -16,7 +16,8 @@ popups and an on-screen display, using the palette in `Palette.qml`, with red
 - `SidebarWindow.qml`: sliding status drawer on the selected output.
 - `DesktopStatus.qml`: native UPower, NetworkManager and Bluetooth status.
 - `AudioState.qml`: PipeWire devices, system defaults, output volume and mute.
-- `SidebarAudio.qml`: inline device selectors and mouse volume controls.
+- `SidebarAudio.qml`: visible output volume/mute and folded input/output device selectors.
+- `SidebarSession.qml`: folded lock, logout, restart and power-off controls.
 - `DotClock.qml`: font-independent dot-matrix clock.
 - `SidebarLogic.js`: exposed monitor edges and battery estimate formatting.
 - `Notifications.qml`: freedesktop notification server and popup state.
@@ -87,9 +88,11 @@ no sensors, including the shared portions of staggered layouts. The invisible
 sensors occupy two logical pixels, reserve no desktop space and take no keyboard
 focus. The drawer shows local date/time (without seconds), system battery charge
 and time estimate, the connected Wi-Fi network and signal, and connected Bluetooth
-devices. It also provides an appearance button, audio input/output selectors,
-and output volume and mute controls. Missing hardware and disabled radios have
-explicit fallback states.
+devices. It retains the full-size dot-matrix clock and presents status in four
+compact tiles: battery, Wi-Fi, Bluetooth, and the selected audio output. An
+icon-only button beside the date changes appearance. Volume and mute remain
+visible, while audio device selection and session actions are folded away.
+Missing hardware and disabled radios have explicit fallback states.
 
 The drawer and wallpaper share a 220 ms animation. Only the wallpaper translates;
 application windows retain their size and position. Wallpaper rotation,
@@ -105,11 +108,25 @@ rebuild the edge sensors. Timing and width are defined at the top of `Sidebar.qm
 UPower and BlueZ are enabled in the workstation profile; NetworkManager is already
 enabled. Quickshell 0.3.2 from the pinned unstable input provides the native networking API.
 
+### Session controls
+
+A small, fixed footer labeled **Session** expands to reveal **Lock**,
+**Log out**, **Restart** and **Power off**. The extra disclosure click reduces
+accidental activation without requiring separate confirmations. Session actions
+are hidden again whenever the drawer closes. The footer remains accessible
+when the rest of the drawer scrolls on short displays.
+
+Lock invokes `workstation-lock`, the same standalone Quickshell lock service
+used by the Niri shortcut. Logout invokes
+`niri msg action quit --skip-confirmation`. Restart and shutdown use
+`systemctl reboot` and `systemctl poweroff` through the active logind
+session. All commands are launched without a shell or elevated privileges.
+
 ### Audio controls
 
-Click the current output or input to expand its device list; click a device to
-make it the system default. A small red dot marks the active default. Lists stay
-inside the drawer’s scrollable area and close when the drawer is dismissed.
+Volume and mute remain immediately available. Select **Audio devices** to
+reveal output and input selectors; then click a device to make it the default. A small red dot marks the active default. Lists stay inside the drawer’s scrollable area. The entire audio section folds
+again when the drawer is dismissed.
 Only audio devices are listed, excluding application streams. Unavailable devices
 disappear on disconnect and the selection follows PipeWire’s fallback.
 
@@ -157,6 +174,14 @@ SDDM uses the separate, Qt 6-only `dotfiles/sddm/workstation/` greeter theme,
 which mirrors the Polkit dialog's palette and layout. Quickshell itself runs
 only inside the Niri session.
 
+## Wallpaper corners
+
+The wallpaper has an 8 logical-pixel corner radius on every output, independent
+of workspace occupancy or drawer visibility. The rounded alpha mask is applied
+by the existing MultiEffect, so blur, saturation, crossfades and the sidebar's
+wallpaper translation still work. The black wallpaper window shows through in
+the clipped corners.
+
 ## Wallpaper loading errors
 
 If the selected wallpaper fails to load, a small message at the bottom left
@@ -193,10 +218,17 @@ open, scrolling on a short output, long network/device names, and the 15-second
 stationary-pointer timeout both inside the drawer and directly on the edge.
 Verify the wallpaper returns exactly to its original position, applications
 receive input outside the drawer and keyboard focus stays on the application.
-Check the appearance button in both modes and confirm GTK applications and
-external dconf changes stay synchronized. Confirm `Mod+Shift+T` no longer changes
-the theme. For audio, select outputs and inputs in the drawer, then use
-pavucontrol’s “Set as fallback” for each direction and verify the selected row
+Check that the Session footer is always reachable and that expanding it reveals
+Lock, Log out, Restart and Power off. Check that it folds again on drawer close.
+Test Lock normally; test logout, restart and power-off only when it is safe to
+end the current session. These actions do not have a second confirmation.
+Check the wallpaper's rounded corners across outputs and during drawer animation,
+rotation, crossfades and occupied-workspace effects.
+Check the appearance icon button in both modes and confirm GTK applications and
+external dconf changes stay synchronized. Check compact status tiles with
+long Wi-Fi and Bluetooth names, absent hardware and short displays. Confirm `Mod+Shift+T` no longer changes
+the theme. For audio, expand Audio devices, select outputs and inputs in the drawer,
+then use pavucontrol’s “Set as fallback” for each direction and verify the selected row
 follows. Test slider click/drag, mute/unmute, media-key and pavucontrol volume
 updates, output switching while muted, device disconnect/reconnect, and a session
 with no audio devices. Verify new playback/recording uses the chosen defaults;

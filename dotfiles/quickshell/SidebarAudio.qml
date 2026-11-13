@@ -7,7 +7,8 @@ Column {
     required property var palette
     required property var audio
     required property var sidebar
-    spacing: 12
+    property bool devicesExpanded: false
+    spacing: 8
 
     component DeviceSelector: Column {
         id: selector
@@ -60,8 +61,6 @@ Column {
                 }
             }
         }
-        // Expand inside the drawer so its input region and scrolling contain
-        // the whole list, including on small or fractionally scaled outputs.
         Column {
             width: parent.width
             visible: selector.expanded
@@ -106,17 +105,26 @@ Column {
         }
     }
 
-    DeviceSelector {
-        id: outputSelector
-        heading: "OUTPUT"
-        devices: root.audio.outputs
-        current: root.audio.output
-        onSelected: node => root.audio.selectOutput(node)
-    }
     RowLayout {
         width: parent.width
+        Text {
+            text: "VOLUME"
+            font.family: root.palette.font
+            font.pixelSize: 10
+            font.letterSpacing: 1
+            color: root.palette.muted
+        }
+        Item { Layout.fillWidth: true }
+        Text {
+            text: root.audio.outputReady ? Math.round(root.audio.volume * 100) + "%" : "—"
+            font.family: root.palette.font
+            font.pixelSize: 12
+            color: root.audio.muted ? root.palette.muted : root.palette.foreground
+        }
         Button {
             id: mute
+            implicitWidth: 64
+            implicitHeight: 30
             text: root.audio.muted ? "Unmute" : "Mute"
             enabled: root.audio.outputReady
             font.family: root.palette.font
@@ -134,13 +142,6 @@ Column {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
             }
-        }
-        Item { Layout.fillWidth: true }
-        Text {
-            text: root.audio.outputReady ? Math.round(root.audio.volume * 100) + "%" : "—"
-            font.family: root.palette.font
-            font.pixelSize: 12
-            color: root.audio.muted ? root.palette.muted : root.palette.foreground
         }
     }
     Slider {
@@ -173,18 +174,62 @@ Column {
             border.color: root.palette.red
         }
     }
-    DeviceSelector {
-        id: inputSelector
-        heading: "INPUT"
-        devices: root.audio.inputs
-        current: root.audio.input
-        onSelected: node => root.audio.selectInput(node)
+
+    Button {
+        id: devicesToggle
+        width: parent.width
+        implicitHeight: 36
+        text: "Audio devices"
+        Accessible.name: (root.devicesExpanded ? "Hide" : "Show") + " audio devices"
+        onClicked: { root.devicesExpanded = !root.devicesExpanded; root.sidebar.activity() }
+        background: Rectangle {
+            radius: 8
+            color: devicesToggle.hovered || devicesToggle.down ? root.palette.line : root.palette.tile
+        }
+        contentItem: RowLayout {
+            spacing: 8
+            Text {
+                Layout.fillWidth: true
+                text: devicesToggle.text
+                font.family: root.palette.font
+                font.pixelSize: 11
+                color: root.palette.foreground
+            }
+            Text {
+                text: root.devicesExpanded ? "−" : "+"
+                font.family: root.palette.font
+                font.pixelSize: 16
+                color: root.palette.muted
+            }
+        }
+    }
+
+    Column {
+        width: parent.width
+        visible: root.devicesExpanded
+        spacing: 12
+
+        DeviceSelector {
+            id: outputSelector
+            heading: "OUTPUT"
+            devices: root.audio.outputs
+            current: root.audio.output
+            onSelected: node => root.audio.selectOutput(node)
+        }
+        DeviceSelector {
+            id: inputSelector
+            heading: "INPUT"
+            devices: root.audio.inputs
+            current: root.audio.input
+            onSelected: node => root.audio.selectInput(node)
+        }
     }
 
     Connections {
         target: root.sidebar
         function onShowingChanged() {
             if (!root.sidebar.showing) {
+                root.devicesExpanded = false
                 outputSelector.expanded = false
                 inputSelector.expanded = false
             }
