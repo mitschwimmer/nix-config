@@ -151,7 +151,8 @@ Scope {
             WlrLayershell.layer: WlrLayer.Background
             WlrLayershell.namespace: "quickshell-niri-wallpaper"
 
-            // The mask follows the wallpaper's local bounds, even as it slides.
+            // Mask the moving full-output image itself, including its inner edge
+            // next to the drawer. Both exposed corners keep Niri's 8px radius.
             Rectangle {
                 id: roundedMask
                 width: wallpaper.width
