@@ -179,11 +179,12 @@ only inside the Niri session.
 
 ## Wallpaper corners
 
-The wallpaper has an 8 logical-pixel corner radius on every output, independent
-of workspace occupancy or drawer visibility. The rounded alpha mask is applied
-by the existing MultiEffect, so blur, saturation, crossfades and the sidebar's
-wallpaper translation still work. The black wallpaper window shows through in
-the clipped corners.
+The wallpaper has an 8 logical-pixel corner radius on every output, including
+the edge revealed when the sidebar slides open on either side. The moving
+wallpaper retains its alpha mask in the existing MultiEffect, so blur, saturation,
+crossfades and the sidebar translation still work. No full-height straight
+divider is drawn over the wallpaper's rounded edge. The black wallpaper window
+shows through in the clipped corners.
 
 ## Wallpaper loading errors
 
@@ -225,8 +226,10 @@ Check that the Session footer is always reachable and that expanding it reveals
 Lock, Log out, Restart and Power off. Check that it folds again on drawer close.
 Test Lock normally; test logout, restart and power-off only when it is safe to
 end the current session. These actions do not have a second confirmation.
-Check the wallpaper's rounded corners across outputs and during drawer animation,
-rotation, crossfades and occupied-workspace effects.
+Check the wallpaper's rounded corners at both the outer edge and the edge
+next to the drawer when opening the sidebar from the left and right, including
+during the slide animation, rotation, crossfades and occupied-workspace effects.
+Verify there is no straight seam obscuring the corners.
 Check the appearance icon button in both modes and confirm GTK applications
 and external dconf changes stay synchronized. Check the full-width status rows,
 including wrapping of long Wi-Fi and Bluetooth names, detailed battery status,
