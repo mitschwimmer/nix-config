@@ -2,7 +2,10 @@
 
 Five NixOS 26.05 guests run under Cloud Hypervisor on the two Secure Boot hosts.
 Only `k8s-cp-01` is enabled, on meawhite; it initializes K3s embedded etcd.
-The other four guests, Cilium, Keepalived and OpenEBS are not deployed.
+The other four guests, Keepalived and OpenEBS are not deployed.
+Cilium 1.20.4 is declared via the K3s HelmChart bootstrap resource; runtime
+acceptance is pending. Pin the DHCP address 192.168.1.103 until an API VIP
+replaces it in the Cilium configuration.
 
 | Guest | Host | Role | vCPU / GiB RAM | MAC suffix | vsock CID |
 | --- | --- | --- | --- | --- | --- |
@@ -27,8 +30,8 @@ persistent `/var/lib/rancher/node`. Keep the token encrypted off-host.
 Future joiners need runtime secret provisioning, not Nix-store tokens.
 
 Two of three etcd servers are planned for meawhite: loss of meawhite
-will lose quorum. The cluster is not symmetric host-HA. Cilium must be
-installed before expecting Kubernetes nodes to become Ready.
+will lose quorum. The cluster is not symmetric host-HA. The Cilium bootstrap
+must converge before expecting Kubernetes nodes to become Ready.
 
 Deployment: [bootstrap.md](bootstrap.md). Operations: [operations.md](operations.md).
 Recovery: [recovery.md](recovery.md).

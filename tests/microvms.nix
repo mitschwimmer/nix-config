@@ -60,6 +60,32 @@ in
       && lib.elem "L+ /etc/rancher/node - - - - /var/lib/rancher/node" c.systemd.tmpfiles.rules
       && lib.all (name: !guests.${name}.services.k3s.enable)
         (lib.filter (name: name != "k8s-cp-01") (builtins.attrNames nodes)));
+  ciliumBootstrap = check "pinned Cilium on cp-01 and guest Bash without ble.sh"
+    (let
+      c = guests."k8s-cp-01";
+      chart = c.services.k3s.manifests.cilium.content;
+      values = chart.spec.valuesContent;
+    in
+      lib.all (name: !guests.${name}.programs.bash.blesh.enable)
+        (builtins.attrNames nodes)
+      && chart.kind == "HelmChart"
+      && chart.metadata.namespace == "kube-system"
+      && chart.spec.repo == "https://helm.cilium.io"
+      && chart.spec.version == "1.20.4"
+      && chart.spec.bootstrap
+      && chart.spec.failurePolicy == "abort"
+      && lib.all (text: lib.hasInfix text values) [
+        "kubeProxyReplacement: true"
+        "k8sServiceHost: 192.168.1.103"
+        "routingMode: native"
+        "autoDirectNodeRoutes: true"
+        "ipv4NativeRoutingCIDR: 10.42.0.0/16"
+        "mode: kubernetes"
+        "binPath: /var/lib/rancher/k3s/data/cni"
+        "confPath: /var/lib/rancher/k3s/agent/etc/cni/net.d"
+      ]
+      && lib.all (name: !(guests.${name}.services.k3s.manifests ? cilium))
+        (lib.filter (name: name != "k8s-cp-01") (builtins.attrNames nodes)));
   hosts = lib.mapAttrs (name: c: check "${name}: opt-in guests without mass restarts"
     (builtins.length (builtins.attrNames c.microvm.vms) == (if name == "meawhite" then 3 else 2)
       && lib.all (vm: !vm.restartIfChanged) (builtins.attrValues c.microvm.vms)

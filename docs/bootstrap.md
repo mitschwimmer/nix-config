@@ -48,3 +48,28 @@ etcd recovery material. Do not print or commit tokens.
 
 For meablack, first discover the real uplink/MAC in `meablack/microvms.nix`.
 Moving DHCP to the bridge can disconnect SSH: use console/timed rollback.
+
+## Cilium bootstrap
+
+Pin cp-01's DHCP address at `192.168.1.103` before enabling the Cilium
+HelmChart: its kube-proxy-free API connection initially uses this address.
+From the workstation, after evaluating and building the guest and
+`meawhite-secure` host closures, deploy the updated host as above. Because
+the MicroVM has `restartIfChanged = false`, restart only the guest on meawhite:
+
+```sh
+sudo systemctl restart microvm@k8s-cp-01
+```
+
+Then inspect the declarative installation from the workstation:
+
+```sh
+ssh root@192.168.1.103 'k3s kubectl -n kube-system get helmcharts,jobs,pods -o wide'
+ssh root@192.168.1.103 'k3s kubectl -n kube-system rollout status ds/cilium --timeout=10m'
+ssh root@192.168.1.103 'k3s kubectl get nodes; k3s kubectl get pods -A'
+```
+
+Cilium must become ready, followed by CoreDNS and metrics-server. If the
+HelmChart fails, inspect `k3s kubectl -n kube-system logs job/helm-install-cilium`
+and events. The chart is pinned to 1.20.4; `failurePolicy: abort` avoids
+an automatic uninstall/reinstall loop. Do not install a second Helm release.
