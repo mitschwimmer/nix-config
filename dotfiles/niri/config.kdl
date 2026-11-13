@@ -84,6 +84,13 @@ window-rule {
     open-floating true
 }
 
+// Teams screen-sharing preview: cover its initial, active, and inactive titles.
+window-rule {
+    match title="^Teams for Linux - (Screen Share Preview|Screen is being shared|Nothing is being shared)$"
+    open-floating true
+    default-floating-position x=16 y=16 relative-to="bottom-right"
+}
+
 // Polkit prompts are independent toplevel windows, not tiled applications.
 window-rule {
     match title="^Authentication Required$"
