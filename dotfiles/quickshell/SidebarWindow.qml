@@ -2,8 +2,6 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Layouts
-import QtQuick.Shapes
 
 PanelWindow {
     id: root
@@ -43,28 +41,75 @@ PanelWindow {
             color: root.palette.line
         }
 
+        // Keep session access visible even when the content must scroll.
+        SidebarSession {
+            id: session
+            width: parent.width - 40
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 20
+            palette: root.palette
+            sidebar: root.sidebar
+        }
+
         Flickable {
-            anchors.fill: parent
-            anchors.margins: 28
-            contentHeight: content.y + content.height + 28
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: session.top
+            anchors.leftMargin: 28
+            anchors.rightMargin: 28
+            anchors.topMargin: 20
+            anchors.bottomMargin: 12
+            contentHeight: content.y + content.height + 12
             boundsBehavior: Flickable.StopAtBounds
             clip: true
 
             Column {
                 id: content
                 width: parent.width
-                y: Math.max(20, Math.min(68, drawer.height * 0.08))
+                y: Math.max(8, Math.min(32, drawer.height * 0.05))
                 spacing: 12
 
-                Row {
-                    spacing: 8
-                    Rectangle { width: 7; height: 7; y: 4; color: root.palette.red }
-                    Text {
-                        text: Qt.formatDateTime(clock.date, "dddd").toUpperCase()
-                        font.family: root.palette.font
-                        font.pixelSize: 11
-                        font.letterSpacing: 1
-                        color: root.palette.muted
+                Item {
+                    width: parent.width
+                    height: 34
+
+                    Row {
+                        anchors.left: parent.left
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 8
+                        Rectangle { width: 7; height: 7; y: 4; color: root.palette.red }
+                        Text {
+                            text: Qt.formatDateTime(clock.date, "dddd").toUpperCase()
+                            font.family: root.palette.font
+                            font.pixelSize: 11
+                            font.letterSpacing: 1
+                            color: root.palette.muted
+                        }
+                    }
+
+                    Button {
+                        id: appearance
+                        width: 34
+                        height: 34
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: root.palette.dark ? "☀" : "☾"
+                        Accessible.name: root.palette.dark ? "Switch to light mode" : "Switch to dark mode"
+                        onClicked: { root.palette.setDark(!root.palette.dark); root.sidebar.activity() }
+                        background: Rectangle {
+                            radius: 8
+                            color: appearance.hovered || appearance.down ? root.palette.line : root.palette.tile
+                        }
+                        contentItem: Text {
+                            text: appearance.text
+                            font.family: root.palette.font
+                            font.pixelSize: 20
+                            color: root.palette.foreground
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
                     }
                 }
                 Text {
@@ -75,123 +120,87 @@ PanelWindow {
                     color: root.palette.foreground
                     wrapMode: Text.Wrap
                 }
-                Item { width: 1; height: 8 }
+                Item { width: 1; height: 4 }
+                // Preserve the current clock's full size and dot-matrix rendering.
                 DotClock {
                     width: parent.width
                     text: Qt.formatDateTime(clock.date, "HH:mm")
                     color: root.palette.foreground
                 }
-                Item { width: 1; height: 20 }
+                Item { width: 1; height: 8 }
 
-                Button {
-                    id: appearance
+                Grid {
+                    id: tiles
                     width: parent.width
-                    implicitHeight: 44
-                    text: root.palette.dark ? "Light mode" : "Dark mode"
-                    Accessible.name: "Switch to " + text.toLowerCase()
-                    onClicked: { root.palette.setDark(!root.palette.dark); root.sidebar.activity() }
-                    background: Rectangle {
-                        radius: 8
-                        color: appearance.hovered || appearance.down ? root.palette.line : root.palette.tile
-                    }
-                    contentItem: Text {
-                        text: appearance.text
-                        font.family: root.palette.font
-                        font.pixelSize: 12
-                        color: root.palette.foreground
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                    columns: 2
+                    spacing: 8
+
+                    Repeater {
+                        model: [
+                            { label: "BATTERY", value: root.status.batteryValue,
+                                detail: root.status.batteryDetail },
+                            { label: "WI-FI", value: root.status.wifiValue,
+                                detail: root.status.wifiDetail },
+                            { label: "BLUETOOTH", value: root.status.bluetoothValue,
+                                detail: root.status.bluetoothDetail },
+                            { label: "OUTPUT", value: root.audio.output
+                                ? (root.audio.output.description || root.audio.output.nickname || root.audio.output.name)
+                                : "Unavailable",
+                                detail: root.audio.outputReady
+                                    ? (root.audio.muted ? "Muted" : Math.round(root.audio.volume * 100) + "% volume")
+                                    : "No audio device" }
+                        ]
+                        Rectangle {
+                            id: tile
+                            required property var modelData
+                            width: (tiles.width - tiles.spacing) / 2
+                            height: 90
+                            radius: 8
+                            color: root.palette.tile
+
+                            Column {
+                                anchors.fill: parent
+                                anchors.margins: 11
+                                spacing: 8
+                                Text {
+                                    width: parent.width
+                                    text: tile.modelData.label
+                                    font.family: root.palette.font
+                                    font.pixelSize: 10
+                                    font.letterSpacing: 0.5
+                                    color: root.palette.muted
+                                }
+                                Text {
+                                    width: parent.width
+                                    text: tile.modelData.value
+                                    elide: Text.ElideRight
+                                    font.family: root.palette.font
+                                    font.pixelSize: 13
+                                    color: root.palette.foreground
+                                }
+                                Text {
+                                    width: parent.width
+                                    text: tile.modelData.detail
+                                    elide: Text.ElideRight
+                                    font.family: root.palette.font
+                                    font.pixelSize: 10
+                                    color: root.palette.muted
+                                }
+                            }
+                            HoverHandler { id: tileHover }
+                            ToolTip.visible: tileHover.hovered
+                            ToolTip.delay: 650
+                            ToolTip.text: tile.modelData.label + ": " + tile.modelData.value
+                                + " · " + tile.modelData.detail
+                        }
                     }
                 }
+
                 Item { width: 1; height: 4 }
                 SidebarAudio {
                     width: parent.width
                     palette: root.palette
                     audio: root.audio
-                    sidebar: root.sidebar
-                }
-                Rectangle { width: parent.width; height: 1; color: root.palette.line }
-                Item { width: 1; height: 4 }
-
-                Repeater {
-                    model: [
-                        { icon: "M 2 6 L 19 6 L 19 17 L 2 17 Z M 21 9 L 21 14", label: "BATTERY", value: root.status.batteryValue,
-                            detail: root.status.batteryDetail, battery: true },
-                        { icon: "M 1 7 Q 12 -1 23 7 M 5 11 Q 12 5 19 11 M 9 15 Q 12 12 15 15 M 12 19 L 12 20", label: "WI-FI", value: root.status.wifiValue,
-                            detail: root.status.wifiDetail, battery: false },
-                        { icon: "M 11 1 L 18 7 L 6 17 M 11 1 L 11 23 L 18 17 L 6 7", label: "BLUETOOTH", value: root.status.bluetoothValue,
-                            detail: root.status.bluetoothDetail, battery: false }
-                    ]
-                    Column {
-                        required property var modelData
-                        width: content.width
-                        spacing: 16
-                        RowLayout {
-                            width: parent.width
-                            spacing: 14
-                            Shape {
-                                Layout.alignment: Qt.AlignTop
-                                Layout.preferredWidth: 24
-                                Layout.preferredHeight: 24
-                                ShapePath {
-                                    strokeColor: root.palette.foreground
-                                    strokeWidth: 1.4
-                                    fillColor: "transparent"
-                                    capStyle: ShapePath.RoundCap
-                                    joinStyle: ShapePath.RoundJoin
-                                    PathSvg { path: modelData.icon }
-                                }
-                            }
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 6
-                                Text {
-                                    text: modelData.label
-                                    font.family: root.palette.font
-                                    font.pixelSize: 10
-                                    font.letterSpacing: 1
-                                    color: root.palette.muted
-                                }
-                                Text {
-                                    text: modelData.value
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideRight
-                                    font.family: root.palette.font
-                                    font.pixelSize: 16
-                                    color: root.palette.foreground
-                                }
-                                Text {
-                                    text: modelData.detail
-                                    Layout.fillWidth: true
-                                    wrapMode: Text.Wrap
-                                    font.family: root.palette.font
-                                    font.pixelSize: 10
-                                    color: root.palette.muted
-                                }
-                                Row {
-                                    visible: modelData.battery && root.status.hasBattery
-                                    spacing: 3
-                                    Repeater {
-                                        model: 12
-                                        Rectangle {
-                                            required property int index
-                                            width: 11
-                                            height: 3
-                                            color: index < Math.round(root.status.batteryLevel * 12)
-                                                ? root.palette.foreground : root.palette.line
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        Rectangle { width: parent.width; height: 1; color: root.palette.line }
-                        Item { width: 1; height: 2 }
-                    }
-                }
-                Item { width: 1; height: 4 }
-                SidebarSession {
-                    width: parent.width
-                    palette: root.palette
                     sidebar: root.sidebar
                 }
             }
