@@ -33,7 +33,12 @@ builtins.mapAttrs (name: host:
   assert require (config.networking.networkmanager.enable == desktop) "NetworkManager profile mismatch";
   assert require (builtins.elem "foot" packages == desktop) "Foot must be workstation-only";
   assert require ((home.xdg.configFile ? "niri/config.kdl") == desktop) "Niri dotfiles profile mismatch";
-  assert require ((home.xdg.configFile ? "quickshell/shell.qml") == desktop) "Quickshell dotfiles profile mismatch";
+  assert require ((home.xdg.configFile ? "quickshell/workstation") == desktop) "Quickshell dotfiles profile mismatch";
+  assert require ((home.xdg.configFile ? "quickshell/workstation-lock") == desktop) "lock screen profile mismatch";
+  assert require (!desktop || lib.versionAtLeast home.programs.quickshell.package.version "0.3.2") "Quickshell lock fixes missing";
+  assert require (!desktop || config.security.pam.services ? quickshell-lock) "lock screen PAM service missing";
+  assert require (!desktop || home.systemd.user.services.workstation-lock.Service.Type == "notify") "lock must acknowledge compositor readiness";
+  assert require (!desktop || home.services.swayidle.events.before-sleep != null) "before-sleep lock missing";
   assert require ((home.home.shellAliases ? prefer-light) == desktop) "desktop alias profile mismatch";
   assert require (config.security.sudo.wheelNeedsPassword) "sudo must continue requiring a password";
   assert require (config.services.openssh.settings.PermitRootLogin == (if desktop then "no" else "prohibit-password")) "root SSH policy changed";
