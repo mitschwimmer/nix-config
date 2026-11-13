@@ -11,6 +11,7 @@ Scope {
     readonly property string wallpaperDirectory: Quickshell.env("HOME") + "/Pictures/Wallpapers"
     readonly property int rotationInterval: 5 * 60 * 1000
     readonly property int crossfadeDuration: 1500
+    readonly property int cornerRadius: 16
 
     readonly property real occupiedSaturation: -1 // -1 is monochrome
     readonly property real occupiedBlur: 0.65        // 0..1, scaled by blurMax
@@ -150,12 +151,28 @@ Scope {
             WlrLayershell.layer: WlrLayer.Background
             WlrLayershell.namespace: "quickshell-niri-wallpaper"
 
+            // The mask follows the wallpaper's local bounds, even as it slides.
+            Rectangle {
+                id: roundedMask
+                width: wallpaper.width
+                height: wallpaper.height
+                radius: root.cornerRadius
+                color: "white"
+                layer.enabled: true
+                layer.smooth: true
+                visible: false
+            }
+
             Item {
                 x: root.sidebar.offsetFor(wallpaper.modelData.name)
                 width: parent.width
                 height: parent.height
                 layer.enabled: true
                 layer.effect: MultiEffect {
+                    maskEnabled: true
+                    maskSource: roundedMask
+                    maskThresholdMin: 0.5
+                    maskSpreadAtMin: 1.0
                     saturation: wallpaper.muted ? root.occupiedSaturation : 0
                     blurEnabled: true
                     blur: wallpaper.muted ? root.occupiedBlur : 0
