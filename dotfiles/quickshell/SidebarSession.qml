@@ -95,17 +95,22 @@ Column {
         }
     }
 
-    Row {
+    Grid {
+        id: actionGrid
         width: parent.width
-        spacing: 6
+        columns: 2
+        spacing: 8
         visible: root.expanded
+
         Repeater {
             model: root.actions
             Button {
                 id: actionButton
                 required property var modelData
-                width: (root.width - 18) / 4
-                implicitHeight: 64
+                width: (actionGrid.width - actionGrid.spacing) / 2
+                implicitHeight: 72
+                leftPadding: 8
+                rightPadding: 8
                 Accessible.name: modelData.label
                 onClicked: root.invoke(modelData.command)
                 background: Rectangle {
@@ -113,32 +118,39 @@ Column {
                     color: actionButton.hovered || actionButton.down
                         ? root.palette.line : root.palette.tile
                 }
-                contentItem: Column {
-                    anchors.centerIn: parent
-                    spacing: 7
-                    Shape {
-                        width: 24
-                        height: 24
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        ShapePath {
-                            strokeColor: actionButton.modelData.label === "Power off"
-                                ? root.palette.red : root.palette.foreground
-                            strokeWidth: 1.5
-                            fillColor: "transparent"
-                            capStyle: ShapePath.RoundCap
-                            joinStyle: ShapePath.RoundJoin
-                            PathSvg { path: actionButton.modelData.icon }
+                // Center inside the button's padded content area, not in
+                // a contentItem whose own geometry is being managed by Button.
+                contentItem: Item {
+                    Column {
+                        width: parent.width
+                        anchors.centerIn: parent
+                        spacing: 7
+
+                        Shape {
+                            width: 24
+                            height: 24
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            ShapePath {
+                                strokeColor: actionButton.modelData.label === "Power off"
+                                    ? root.palette.red : root.palette.foreground
+                                strokeWidth: 1.5
+                                fillColor: "transparent"
+                                capStyle: ShapePath.RoundCap
+                                joinStyle: ShapePath.RoundJoin
+                                PathSvg { path: actionButton.modelData.icon }
+                            }
                         }
-                    }
-                    Text {
-                        text: actionButton.modelData.label
-                        width: actionButton.width
-                        font.family: root.palette.font
-                        font.pixelSize: 9
-                        color: actionButton.modelData.label === "Power off"
-                            ? root.palette.red : root.palette.foreground
-                        horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.Wrap
+                        Text {
+                            width: parent.width
+                            text: actionButton.modelData.label
+                            font.family: root.palette.font
+                            font.pixelSize: 9
+                            color: actionButton.modelData.label === "Power off"
+                                ? root.palette.red : root.palette.foreground
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            wrapMode: Text.Wrap
+                        }
                     }
                 }
             }

@@ -113,7 +113,8 @@ enabled. Quickshell 0.3.2 from the pinned unstable input provides the native net
 
 A fixed, understated **Session** footer uses a thin divider and a clickable
 row with a power icon and chevron rather than a filled button. It expands upward
-to reveal **Lock**, **Log out**, **Restart** and **Power off**. The extra
+to reveal **Lock**, **Log out**, **Restart** and **Power off** in a two-column,
+two-row grid with centered icons and labels. The extra
 disclosure click reduces accidental activation without requiring separate
 confirmations. Actions hide again whenever the drawer closes. The footer
 stays accessible while the main content scrolls on short displays and aligns
@@ -127,8 +128,11 @@ session. All commands are launched without a shell or elevated privileges.
 
 ### Audio controls
 
-Volume and mute remain immediately available. Select **Audio devices** to
-reveal output and input selectors; then click a device to make it the default. A small red dot marks the active default. Lists stay inside the drawer’s scrollable area. The entire audio section folds
+Volume and mute remain immediately available, with the currently selected
+output and input names shown under the volume heading. Select **Audio devices**
+to reveal output and input selectors; then click a device to make it the default.
+Audio disclosure and selection buttons have horizontal padding so labels and
+indicators stay clear of their edges. A small red dot marks the active default. Lists stay inside the drawer’s scrollable area. The entire audio section folds
 again when the drawer is dismissed.
 Only audio devices are listed, excluding application streams. Unavailable devices
 disappear on disconnect and the selection follows PipeWire’s fallback.
@@ -222,7 +226,9 @@ stationary-pointer timeout both inside the drawer and directly on the edge.
 Verify the wallpaper returns exactly to its original position, applications
 receive input outside the drawer and keyboard focus stays on the application.
 Check that the Session footer is always reachable and that expanding it reveals
-Lock, Log out, Restart and Power off. Check that it folds again on drawer close.
+a two-by-two grid of Lock, Log out, Restart and Power off; verify icons and labels
+stay centered at both workstation display scales. Check that it folds again on
+drawer close.
 Test Lock normally; test logout, restart and power-off only when it is safe to
 end the current session. These actions do not have a second confirmation.
 Check the wallpaper's rounded corners across outputs and during drawer animation,
@@ -231,8 +237,9 @@ Check the appearance icon button in both modes and confirm GTK applications
 and external dconf changes stay synchronized. Check the full-width status rows,
 including wrapping of long Wi-Fi and Bluetooth names, detailed battery status,
 absent hardware and short displays. Confirm `Mod+Shift+T` no longer changes
-the theme. For audio, expand Audio devices, select outputs and inputs in the drawer,
-then use pavucontrol’s “Set as fallback” for each direction and verify the selected row
+the theme. For audio, check that the selected output/input names follow external
+changes; expand Audio devices, check the selection buttons' horizontal spacing,
+select outputs and inputs in the drawer, then use pavucontrol’s “Set as fallback” for each direction and verify the selected row
 follows. Test slider click/drag, mute/unmute, media-key and pavucontrol volume
 updates, output switching while muted, device disconnect/reconnect, and a session
 with no audio devices. Verify new playback/recording uses the chosen defaults;

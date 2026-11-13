@@ -10,6 +10,11 @@ Column {
     property bool devicesExpanded: false
     spacing: 8
 
+    function deviceName(node) {
+        return node ? (node.description || node.nickname || node.name || "Unnamed device")
+            : "Unavailable"
+    }
+
     component DeviceSelector: Column {
         id: selector
         required property string heading
@@ -32,6 +37,8 @@ Column {
             width: parent.width
             implicitHeight: Math.max(44, contentItem.implicitHeight + 20)
             enabled: selector.devices.length > 0
+            leftPadding: 12
+            rightPadding: 12
             text: selector.current
                 ? selector.current.description || selector.current.nickname || selector.current.name
                 : selector.devices.length ? "Select a device" : "No devices available"
@@ -73,6 +80,8 @@ Column {
                     readonly property bool current: selector.current === modelData
                     width: selector.width
                     implicitHeight: Math.max(40, contentItem.implicitHeight + 16)
+                    leftPadding: 12
+                    rightPadding: 12
                     text: modelData.description || modelData.nickname || modelData.name
                     Accessible.name: selector.heading + ": " + text + (current ? ", selected" : "")
                     onClicked: {
@@ -144,6 +153,28 @@ Column {
             }
         }
     }
+    Column {
+        width: parent.width
+        spacing: 3
+        Text {
+            width: parent.width
+            text: "Output · " + root.deviceName(root.audio.output)
+            textFormat: Text.PlainText
+            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+            font.family: root.palette.font
+            font.pixelSize: 10
+            color: root.palette.muted
+        }
+        Text {
+            width: parent.width
+            text: "Input · " + root.deviceName(root.audio.input)
+            textFormat: Text.PlainText
+            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+            font.family: root.palette.font
+            font.pixelSize: 10
+            color: root.palette.muted
+        }
+    }
     Slider {
         id: volume
         width: parent.width
@@ -179,6 +210,8 @@ Column {
         id: devicesToggle
         width: parent.width
         implicitHeight: 36
+        leftPadding: 12
+        rightPadding: 12
         text: "Audio devices"
         Accessible.name: (root.devicesExpanded ? "Hide" : "Show") + " audio devices"
         onClicked: { root.devicesExpanded = !root.devicesExpanded; root.sidebar.activity() }
