@@ -17,6 +17,7 @@ popups and an on-screen display, using the palette in `Palette.qml`, with red
 - `DesktopStatus.qml`: native UPower, NetworkManager and Bluetooth status.
 - `AudioState.qml`: PipeWire devices, system defaults, output volume and mute.
 - `SidebarAudio.qml`: inline device selectors and mouse volume controls.
+- `SidebarSession.qml`: confirmed logout, restart and power-off controls.
 - `DotClock.qml`: font-independent dot-matrix clock.
 - `SidebarLogic.js`: exposed monitor edges and battery estimate formatting.
 - `Notifications.qml`: freedesktop notification server and popup state.
@@ -88,8 +89,8 @@ sensors occupy two logical pixels, reserve no desktop space and take no keyboard
 focus. The drawer shows local date/time (without seconds), system battery charge
 and time estimate, the connected Wi-Fi network and signal, and connected Bluetooth
 devices. It also provides an appearance button, audio input/output selectors,
-and output volume and mute controls. Missing hardware and disabled radios have
-explicit fallback states.
+output volume and mute controls, and session actions for logout, restart and
+power-off. Missing hardware and disabled radios have explicit fallback states.
 
 The drawer and wallpaper share a 220 ms animation. Only the wallpaper translates;
 application windows retain their size and position. Wallpaper rotation,
@@ -104,6 +105,16 @@ it can reveal the drawer again. Monitor layout changes close the drawer and
 rebuild the edge sensors. Timing and width are defined at the top of `Sidebar.qml`.
 UPower and BlueZ are enabled in the workstation profile; NetworkManager is already
 enabled. Quickshell 0.3.2 from the pinned unstable input provides the native networking API.
+
+### Session controls
+
+The bottom of the scrollable drawer offers **Log out**, **Restart** and
+**Power off**. Each asks for confirmation and warns about unsaved work. Cancel,
+closing the drawer or changing the monitor layout clears the pending action.
+Logout invokes `niri msg action quit --skip-confirmation` after the drawer's
+confirmation; restart and shutdown invoke `systemctl reboot` and
+`systemctl poweroff` through the active logind session. No shell or
+elevated privileges are involved.
 
 ### Audio controls
 
@@ -157,6 +168,14 @@ SDDM uses the separate, Qt 6-only `dotfiles/sddm/workstation/` greeter theme,
 which mirrors the Polkit dialog's palette and layout. Quickshell itself runs
 only inside the Niri session.
 
+## Wallpaper corners
+
+The wallpaper has a 16 logical-pixel corner radius on every output, independent
+of workspace occupancy or drawer visibility. The rounded alpha mask is applied
+by the existing MultiEffect, so blur, saturation, crossfades and the sidebar's
+wallpaper translation still work. The black wallpaper window shows through in
+the clipped corners.
+
 ## Wallpaper loading errors
 
 If the selected wallpaper fails to load, a small message at the bottom left
@@ -193,6 +212,10 @@ open, scrolling on a short output, long network/device names, and the 15-second
 stationary-pointer timeout both inside the drawer and directly on the edge.
 Verify the wallpaper returns exactly to its original position, applications
 receive input outside the drawer and keyboard focus stays on the application.
+Check the session actions with Cancel and by closing the drawer while confirming;
+only confirm logout, restart or power-off when it is safe to end the session.
+Check the wallpaper's rounded corners across outputs and during drawer animation,
+rotation, crossfades and occupied-workspace effects.
 Check the appearance button in both modes and confirm GTK applications and
 external dconf changes stay synchronized. Confirm `Mod+Shift+T` no longer changes
 the theme. For audio, select outputs and inputs in the drawer, then use
