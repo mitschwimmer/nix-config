@@ -11,7 +11,7 @@ Scope {
     readonly property string wallpaperDirectory: Quickshell.env("HOME") + "/Pictures/Wallpapers"
     readonly property int rotationInterval: 5 * 60 * 1000
     readonly property int crossfadeDuration: 1500
-    readonly property int cornerRadius: 16
+    readonly property int cornerRadius: 8
 
     readonly property real occupiedSaturation: -1 // -1 is monochrome
     readonly property real occupiedBlur: 0.65        // 0..1, scaled by blurMax
