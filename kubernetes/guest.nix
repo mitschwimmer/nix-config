@@ -1,7 +1,10 @@
-{ config, pkgs, name, node, ... }:
+{ config, lib, pkgs, name, node, ... }:
 {
   # Guests deliberately do not inherit mkHost's Home Manager/workstation setup.
-  imports = [ ../profiles/base.nix ./k3s.nix ];
+  imports = [ ../profiles/base.nix ./k3s.nix ./cilium.nix ];
+
+  # ble.sh cannot initialize its cache inside the guest's read-only Nix store.
+  programs.bash.blesh.enable = lib.mkForce false;
 
   networking.hostName = name;
   networking.useDHCP = false;
