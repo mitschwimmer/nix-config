@@ -44,7 +44,6 @@
   boot.kernelParams = [
     "quiet"
     "splash"
-    "mem_sleep_default=deep"
   ];
 
   boot.extraModulePackages = with config.boot.kernelPackages; [
