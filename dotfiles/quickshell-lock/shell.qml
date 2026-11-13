@@ -6,8 +6,8 @@ import QtQuick
 
 Scope {
     id: root
+    Component.onCompleted: Quickshell.watchFiles = false
 
-    readonly property var backgrounds: JSON.parse(Quickshell.env("WORKSTATION_LOCK_BACKGROUNDS") || "{}")
     property string message: ""
     property bool notified: false
 
@@ -31,7 +31,7 @@ Scope {
         onCompleted: result => {
             if (result === PamResult.Success) {
                 lock.locked = false
-                Quickshell.quit()
+                Qt.quit()
             } else {
                 root.message = result === PamResult.Error
                     ? "Authentication unavailable. Try again."
@@ -64,7 +64,6 @@ Scope {
         LockSurface {
             auth: pam
             status: root.message
-            background: screen ? (root.backgrounds[screen.name] || "") : ""
             onRetryRequested: root.retry()
         }
     }

@@ -2,14 +2,12 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Effects
 import QtQuick.Layouts
 
 WlSessionLockSurface {
     id: root
     required property var auth
     required property string status
-    required property string background
     signal retryRequested()
 
     color: "#000000"
@@ -30,32 +28,6 @@ WlSessionLockSurface {
     }
 
     SystemClock { id: clock; precision: SystemClock.Minutes }
-
-    // The raw image is never painted. Every frame has an opaque black base;
-    // loading errors and newly attached outputs therefore remain black.
-    Image {
-        id: snapshot
-        anchors.fill: parent
-        source: root.background
-        fillMode: Image.PreserveAspectCrop
-        visible: false
-        cache: false
-        asynchronous: true
-    }
-    MultiEffect {
-        anchors.fill: parent
-        source: snapshot
-        visible: snapshot.status === Image.Ready
-        blurEnabled: true
-        blurMax: 64
-        blur: 1.0
-        blurMultiplier: 1.0
-        autoPaddingEnabled: false
-    }
-    Rectangle {
-        anchors.fill: parent
-        color: "#66000000"
-    }
 
     ColumnLayout {
         anchors.centerIn: parent

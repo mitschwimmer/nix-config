@@ -12,13 +12,6 @@ let
       systemctl --user start workstation-lock.service
     '';
   };
-  start = pkgs.writeShellApplication {
-    name = "workstation-lock-start";
-    runtimeInputs = [ pkgs.coreutils pkgs.jq pkgs.niri pkgs.grim ];
-    text = builtins.readFile ../../dotfiles/quickshell-lock/capture.sh + ''
-      exec ${lib.getExe pkgs-unstable.quickshell} -c workstation-lock
-    '';
-  };
 in
 {
   programs.quickshell.configs.workstation-lock = lockConfig;
@@ -33,14 +26,11 @@ in
     Service = {
       Type = "notify";
       NotifyAccess = "all";
-      ExecStart = lib.getExe start;
+      ExecStart = "${lib.getExe pkgs-unstable.quickshell} -c workstation-lock";
       Environment = [
         "WORKSTATION_LOCK_NOTIFY=${pkgs.systemd}/bin/systemd-notify"
         "QT_QPA_PLATFORM=wayland"
       ];
-      RuntimeDirectory = "workstation-lock";
-      RuntimeDirectoryMode = "0700";
-      UMask = "0077";
       TimeoutStartSec = 5;
       TimeoutStopSec = 2;
     };

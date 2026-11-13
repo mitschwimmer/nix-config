@@ -1,54 +1,45 @@
 # Workstation lock screen
 
-`workstation-lock` starts a separate Quickshell 0.3.2 process from the existing
-pinned NixOS unstable input. SDDM continues to handle login. The ordinary desktop
-shell can restart without taking the locker with it.
+`workstation-lock` starts a separate Quickshell 0.3.2 process using the pinned
+unstable input. It shares the desktop's `DotClock.qml`, JetBrains Mono, square
+password masks and red accents, but renders on an opaque black background.
+SDDM continues to handle login. Restarting the desktop shell does not affect
+the locker.
 
-The lock screen uses the desktop's `DotClock.qml`, JetBrains Mono, white text,
-square password masks and restrained red accents. Each output shows a blurred,
-dimmed snapshot of its desktop taken immediately before locking, including open
-windows. The snapshot is frozen: the actual desktop is neither transparent nor
-interactive behind the lock. Newly connected outputs and failed captures use
-opaque black. The image is only rendered through the blur effect.
-
-Snapshots are captured by a small shell script using Niri, Grim and jq. Captures
-run concurrently at half resolution, each with a one-second timeout. They exist
-only inside a mode-0700 directory in `$XDG_RUNTIME_DIR`;
-systemd removes the directory on unlock, crash or startup timeout. They are not
-written to the home directory or screenshot history.
-
-`WlSessionLock` covers every output. Only `PamResult.Success` from the dedicated
-NixOS `quickshell-lock` PAM service releases the lock. Escape clears the field;
-it does not dismiss the lock. Wrong passwords clear all fields and start a fresh
-PAM conversation after a short delay. PAM errors keep the screen locked.
+`WlSessionLock` covers every output using the Wayland session-lock protocol.
+Only `PamResult.Success` from the dedicated NixOS `quickshell-lock` PAM service
+releases the lock. Escape clears the field; it never unlocks. Wrong passwords
+clear all fields and restart the PAM conversation after a short delay. PAM
+errors keep the session locked. There is no unauthenticated unlock IPC.
 
 ## Entry points and recovery
 
-- `Super+L` or `workstation-lock`: start the locker and wait until the compositor
-  confirms coverage. Repeated requests share the same systemd service.
-- `loginctl lock-session`: handled by Swayidle using the same entry point.
-- Suspend: Swayidle's `-w` before-sleep hook waits for that acknowledgement.
-  Logind's delay-inhibitor budget is 10 seconds; Quickshell startup is bounded
-  to five seconds, with two seconds allowed for process cleanup on failure.
+- `Super+Alt+L` or `workstation-lock`: start the locker and wait for Niri to
+  confirm coverage. Repeated requests share one systemd service. The shortcut
+  works while locked, to recover from a crashed locker. `Mod+L` remains
+  available for window navigation.
+- `loginctl lock-session`: Swayidle uses the same entry point.
+- Suspend: Swayidle's `-w` before-sleep hook waits for lock acknowledgement.
+  Logind's delay-inhibitor budget is 10 seconds; startup is bounded to
+  five seconds, with two seconds for cleanup on failure.
 
-Quickshell is the only screen locker. If startup fails before acquiring the lock,
-the command reports failure and the session remains unlocked. If it crashes after
-acquiring the lock, Niri keeps the session locked on its solid-color background.
-There is no automatic restart or second locker. To recover, switch to another TTY
-with `Ctrl+Alt+F3`, log in as the same user and restart the locker:
+Quickshell is the sole locker. Failed startup reports failure and leaves the
+session unlocked. If Quickshell crashes after locking, Niri keeps the screen
+locked on its solid-color background. Retry `Super+Alt+L`, or switch to
+another TTY with `Ctrl+Alt+F3`, log in as the same user, and run:
 
 ```sh
 systemctl --user restart workstation-lock.service
 ```
 
-Then return to the graphical TTY. If Quickshell itself cannot launch, diagnose
-the service from the TTY with `journalctl --user -u workstation-lock.service`.
-There is no automatic idle timeout, automatic suspend or unauthenticated unlock IPC.
+Then return to the graphical TTY. Diagnose failures with
+`journalctl --user -u workstation-lock.service`. There is no alternate
+locker, automatic restart or idle timeout.
 
 ## Validation
 
 ```sh
-bash -n dotfiles/quickshell-lock/capture.sh
+niri validate --config dotfiles/niri/config.kdl
 nix eval --no-update-lock-file --raw .#nixosConfigurations.meanovo.config.system.build.toplevel.drvPath
 nix eval --no-update-lock-file --raw .#nixosConfigurations.meatab.config.system.build.toplevel.drvPath
 nix eval --no-update-lock-file --impure --json --expr '
@@ -57,20 +48,20 @@ nix eval --no-update-lock-file --impure --json --expr '
 '
 ```
 
-After deploying a generation, log out/in to start Swayidle with the new session.
-Keep TTY/SSH access for the first real-session checks. Verify:
+After deploying a generation, log out/in to restart Swayidle. Keep TTY/SSH
+access for the first real-session checks. Verify:
 
-- Successful and wrong passwords, rapid Enter, Escape, retry after PAM failure,
-  and password clearing across multiple displays.
-- Per-output snapshots, fractional scales, short outputs, monitor hotplug while
-  locked, and black backgrounds when capture is unavailable.
-- Repeated manual locks, `loginctl lock-session`, lid-close/suspend/resume, and
+- Successful and wrong passwords, rapid Enter, Escape, retry after PAM
+  failure, and field clearing across displays.
+- Different output sizes, fractional scaling, monitor hotplug while locked
+  and black backgrounds on every output.
+- Repeated manual locks, `loginctl lock-session`, suspend/resume and
   suspend immediately after requesting a lock.
-- With the session locked, kill the locker main process with
+- With the session locked, kill Quickshell using
   `systemctl --user kill --signal=SIGKILL --kill-whom=main workstation-lock.service`.
-  Confirm the desktop stays inaccessible and recover by restarting Quickshell
-  from another TTY. Never use a plain service stop as an unlock action.
-- Restart the ordinary `workstation` Quickshell process while locked and confirm
-  the separate locker remains usable.
+  Confirm the desktop stays inaccessible; recover via `Super+Alt+L` or a TTY.
+- Restart the ordinary `workstation` Quickshell process while locked and
+  confirm the standalone locker remains usable.
+- Verify `systemctl --user show-environment` includes `WAYLAND_DISPLAY`.
 
-PAM, compositor and suspend correctness require the physical Niri session.
+PAM, compositor and suspend correctness require a physical Niri session.
