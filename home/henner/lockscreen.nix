@@ -12,10 +12,18 @@ let
       systemctl --user start workstation-lock.service
     '';
   };
+  suspend = pkgs.writeShellApplication {
+    name = "workstation-suspend";
+    runtimeInputs = [ lock pkgs.systemd ];
+    text = ''
+      # Suspend only after the compositor acknowledges the session lock.
+      workstation-lock && systemctl suspend
+    '';
+  };
 in
 {
   programs.quickshell.configs.workstation-lock = lockConfig;
-  home.packages = [ lock ];
+  home.packages = [ lock suspend ];
 
   systemd.user.services.workstation-lock = {
     Unit = {
