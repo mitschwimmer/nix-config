@@ -73,3 +73,14 @@ Cilium must become ready, followed by CoreDNS and metrics-server. If the
 HelmChart fails, inspect `k3s kubectl -n kube-system logs job/helm-install-cilium`
 and events. The chart is pinned to 1.20.4; `failurePolicy: abort` avoids
 an automatic uninstall/reinstall loop. Do not install a second Helm release.
+
+## Containerd CNI paths
+
+The guest now installs a containerd v3 drop-in so its runtime loads the
+Cilium CNI files from persistent K3s directories. After deploying the new
+`meawhite-secure` closure and restarting only `microvm@k8s-cp-01`, check:
+
+```sh
+ssh root@192.168.1.103 "k3s crictl info | grep -E -A 5 'PluginConfDir|lastCNILoadStatus'"
+ssh root@192.168.1.103 'k3s kubectl get nodes; k3s kubectl get pods -A'
+```
