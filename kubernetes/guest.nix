@@ -7,6 +7,10 @@
   programs.bash.blesh.enable = lib.mkForce false;
 
   networking.hostName = name;
+  # Cilium's eBPF datapath may return pod traffic on a different interface
+  # than NixOS's netfilter rpfilter expects. Kernel rp_filter is also off below.
+  # Keep the regular NixOS ingress firewall and port allowlist enabled.
+  networking.firewall.checkReversePath = false;
   networking.useDHCP = false;
   networking.useNetworkd = true;
   systemd.network = {

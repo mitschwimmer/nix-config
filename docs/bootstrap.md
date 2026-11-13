@@ -69,7 +69,10 @@ ssh root@192.168.1.103 'k3s kubectl -n kube-system rollout status ds/cilium --ti
 ssh root@192.168.1.103 'k3s kubectl get nodes; k3s kubectl get pods -A'
 ```
 
-Cilium must become ready, followed by CoreDNS and metrics-server. If the
+Cilium must become ready, followed by CoreDNS and metrics-server. If pod
+readiness probes time out despite a Ready node, verify Cilium endpoint health;
+the guest disables NixOS netfilter reverse-path checks while retaining the
+ingress firewall, avoiding asymmetric eBPF traffic drops. If the
 HelmChart fails, inspect `k3s kubectl -n kube-system logs job/helm-install-cilium`
 and events. The chart is pinned to 1.20.4; `failurePolicy: abort` avoids
 an automatic uninstall/reinstall loop. Do not install a second Helm release.

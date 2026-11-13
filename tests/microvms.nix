@@ -33,6 +33,8 @@ in
   # K3s activation is staged separately; this suite checks guest foundations only.
   guests = lib.mapAttrs (name: c: check "${name}: raw persistent state, full kernel and no NAT"
     (c.networking.hostName == name
+      && c.networking.firewall.enable
+      && !c.networking.firewall.checkReversePath
       && c.microvm.hypervisor == "cloud-hypervisor"
       && c.microvm.storeOnDisk
       && c.microvm.shares == [ ]
