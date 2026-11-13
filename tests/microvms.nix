@@ -60,6 +60,20 @@ in
       && lib.elem "L+ /etc/rancher/node - - - - /var/lib/rancher/node" c.systemd.tmpfiles.rules
       && lib.all (name: !guests.${name}.services.k3s.enable)
         (lib.filter (name: name != "k8s-cp-01") (builtins.attrNames nodes)));
+  containerdCni = check "containerd v3 imports persistent Cilium paths"
+    (let
+      rules = guests."k8s-cp-01".systemd.tmpfiles.rules;
+      dropin = builtins.readFile ../kubernetes/containerd-cni.toml;
+    in
+      lib.elem "d /var/lib/rancher/k3s/agent/etc/containerd/config-v3.toml.d 0755 root root -" rules
+      && lib.any (lib.hasPrefix
+        "L+ /var/lib/rancher/k3s/agent/etc/containerd/config-v3.toml.d/10-cni.toml - - - - "
+      ) rules
+      && lib.all (fragment: lib.hasInfix fragment dropin) [
+        "[plugins.'io.containerd.cri.v1.runtime'.cni]"
+        "bin_dirs = [\"/var/lib/rancher/k3s/data/cni\"]"
+        "conf_dir = \"/var/lib/rancher/k3s/agent/etc/cni/net.d\""
+      ]);
   ciliumBootstrap = check "pinned Cilium on cp-01 and guest Bash without ble.sh"
     (let
       c = guests."k8s-cp-01";

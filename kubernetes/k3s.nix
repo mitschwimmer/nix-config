@@ -37,6 +37,11 @@ in
     "d /var/lib/rancher/node 0700 root root -"
     "d /etc/rancher 0755 root root -"
     "L+ /etc/rancher/node - - - - /var/lib/rancher/node"
+
+    # The pinned K3s/containerd 2 config imports this v3 drop-in.
+    # Without it containerd ignores Cilium's persistent K3s CNI paths.
+    "d /var/lib/rancher/k3s/agent/etc/containerd/config-v3.toml.d 0755 root root -"
+    "L+ /var/lib/rancher/k3s/agent/etc/containerd/config-v3.toml.d/10-cni.toml - - - - ${./containerd-cni.toml}"
   ];
   systemd.services.k3s = lib.mkIf bootstrapServer {
     after = [ "systemd-tmpfiles-setup.service" ];
