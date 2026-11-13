@@ -88,10 +88,11 @@ no sensors, including the shared portions of staggered layouts. The invisible
 sensors occupy two logical pixels, reserve no desktop space and take no keyboard
 focus. The drawer shows local date/time (without seconds), system battery charge
 and time estimate, the connected Wi-Fi network and signal, and connected Bluetooth
-devices. It retains the full-size dot-matrix clock and presents status in four
-compact tiles: battery, Wi-Fi, Bluetooth, and the selected audio output. An
-icon-only button beside the date changes appearance. Volume and mute remain
-visible, while audio device selection and session actions are folded away.
+devices. It retains the full-size dot-matrix clock and presents battery, Wi-Fi
+and Bluetooth in full-width rows with icons, values and readable details.
+Long network and device names wrap instead of truncating. An icon-only button
+beside the date changes appearance. Volume and mute remain visible while audio
+device selection stays folded away.
 Missing hardware and disabled radios have explicit fallback states.
 
 The drawer and wallpaper share a 220 ms animation. Only the wallpaper translates;
@@ -110,11 +111,13 @@ enabled. Quickshell 0.3.2 from the pinned unstable input provides the native net
 
 ### Session controls
 
-A small, fixed footer labeled **Session** expands to reveal **Lock**,
-**Log out**, **Restart** and **Power off**. The extra disclosure click reduces
-accidental activation without requiring separate confirmations. Session actions
-are hidden again whenever the drawer closes. The footer remains accessible
-when the rest of the drawer scrolls on short displays.
+A fixed, understated **Session** footer uses a thin divider and a clickable
+row with a power icon and chevron rather than a filled button. It expands upward
+to reveal **Lock**, **Log out**, **Restart** and **Power off**. The extra
+disclosure click reduces accidental activation without requiring separate
+confirmations. Actions hide again whenever the drawer closes. The footer
+stays accessible while the main content scrolls on short displays and aligns
+with the main content's horizontal margins.
 
 Lock invokes `workstation-lock`, the same standalone Quickshell lock service
 used by the Niri shortcut. Logout invokes
@@ -224,9 +227,10 @@ Test Lock normally; test logout, restart and power-off only when it is safe to
 end the current session. These actions do not have a second confirmation.
 Check the wallpaper's rounded corners across outputs and during drawer animation,
 rotation, crossfades and occupied-workspace effects.
-Check the appearance icon button in both modes and confirm GTK applications and
-external dconf changes stay synchronized. Check compact status tiles with
-long Wi-Fi and Bluetooth names, absent hardware and short displays. Confirm `Mod+Shift+T` no longer changes
+Check the appearance icon button in both modes and confirm GTK applications
+and external dconf changes stay synchronized. Check the full-width status rows,
+including wrapping of long Wi-Fi and Bluetooth names, detailed battery status,
+absent hardware and short displays. Confirm `Mod+Shift+T` no longer changes
 the theme. For audio, expand Audio devices, select outputs and inputs in the drawer,
 then use pavucontrol’s “Set as fallback” for each direction and verify the selected row
 follows. Test slider click/drag, mute/unmute, media-key and pavucontrol volume

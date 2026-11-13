@@ -1,6 +1,7 @@
 import Quickshell
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import QtQuick.Shapes
 
 Column {
@@ -41,32 +42,55 @@ Column {
         color: root.palette.line
     }
 
+    // An accessible click target without a permanent button-shaped surface.
     Button {
         id: disclosure
         width: parent.width
-        implicitHeight: 38
+        implicitHeight: 40
         text: "SESSION"
         Accessible.name: root.expanded ? "Hide session actions" : "Show session actions"
         onClicked: { root.expanded = !root.expanded; root.sidebar.activity() }
         background: Rectangle {
             radius: 8
-            color: disclosure.hovered || disclosure.down ? root.palette.line : root.palette.tile
+            color: disclosure.hovered || disclosure.down
+                ? root.palette.tile : "transparent"
         }
-        contentItem: Row {
-            anchors.centerIn: parent
-            spacing: 8
+        contentItem: RowLayout {
+            spacing: 10
+            Shape {
+                Layout.preferredWidth: 16
+                Layout.preferredHeight: 16
+                ShapePath {
+                    strokeColor: root.palette.muted
+                    strokeWidth: 1.4
+                    fillColor: "transparent"
+                    capStyle: ShapePath.RoundCap
+                    PathSvg { path: "M 8 2 L 8 8 M 4 4.5 A 6 6 0 1 0 12 4.5" }
+                }
+            }
             Text {
+                Layout.fillWidth: true
                 text: disclosure.text
                 font.family: root.palette.font
                 font.pixelSize: 10
                 font.letterSpacing: 1
                 color: root.palette.foreground
             }
-            Text {
-                text: root.expanded ? "−" : "+"
-                font.family: root.palette.font
-                font.pixelSize: 14
-                color: root.palette.muted
+            Shape {
+                Layout.preferredWidth: 16
+                Layout.preferredHeight: 16
+                ShapePath {
+                    strokeColor: root.palette.muted
+                    strokeWidth: 1.4
+                    fillColor: "transparent"
+                    capStyle: ShapePath.RoundCap
+                    joinStyle: ShapePath.RoundJoin
+                    PathSvg {
+                        path: root.expanded
+                            ? "M 3 6 L 8 11 L 13 6"
+                            : "M 3 10 L 8 5 L 13 10"
+                    }
+                }
             }
         }
     }
