@@ -2,6 +2,8 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
+import QtQuick.Shapes
 
 PanelWindow {
     id: root
@@ -44,7 +46,7 @@ PanelWindow {
         // Keep session access visible even when the content must scroll.
         SidebarSession {
             id: session
-            width: parent.width - 40
+            width: parent.width - 56
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 20
@@ -129,69 +131,79 @@ PanelWindow {
                 }
                 Item { width: 1; height: 8 }
 
-                Grid {
-                    id: tiles
-                    width: parent.width
-                    columns: 2
-                    spacing: 8
+                // Full-width status rows keep long network and device details readable.
+                Repeater {
+                    model: [
+                        { icon: "M 2 6 L 19 6 L 19 17 L 2 17 Z M 21 9 L 21 14",
+                            label: "BATTERY", value: root.status.batteryValue,
+                            detail: root.status.batteryDetail },
+                        { icon: "M 1 7 Q 12 -1 23 7 M 5 11 Q 12 5 19 11 M 9 15 Q 12 12 15 15 M 12 19 L 12 20",
+                            label: "WI-FI", value: root.status.wifiValue,
+                            detail: root.status.wifiDetail },
+                        { icon: "M 11 1 L 18 7 L 6 17 M 11 1 L 11 23 L 18 17 L 6 7",
+                            label: "BLUETOOTH", value: root.status.bluetoothValue,
+                            detail: root.status.bluetoothDetail }
+                    ]
 
-                    Repeater {
-                        model: [
-                            { label: "BATTERY", value: root.status.batteryValue,
-                                detail: root.status.batteryDetail },
-                            { label: "WI-FI", value: root.status.wifiValue,
-                                detail: root.status.wifiDetail },
-                            { label: "BLUETOOTH", value: root.status.bluetoothValue,
-                                detail: root.status.bluetoothDetail },
-                            { label: "OUTPUT", value: root.audio.output
-                                ? (root.audio.output.description || root.audio.output.nickname || root.audio.output.name)
-                                : "Unavailable",
-                                detail: root.audio.outputReady
-                                    ? (root.audio.muted ? "Muted" : Math.round(root.audio.volume * 100) + "% volume")
-                                    : "No audio device" }
-                        ]
-                        Rectangle {
-                            id: tile
-                            required property var modelData
-                            width: (tiles.width - tiles.spacing) / 2
-                            height: 90
-                            radius: 8
-                            color: root.palette.tile
+                    Column {
+                        id: statusRow
+                        required property var modelData
+                        width: content.width
+                        spacing: 12
 
-                            Column {
-                                anchors.fill: parent
-                                anchors.margins: 11
-                                spacing: 8
+                        RowLayout {
+                            width: parent.width
+                            spacing: 14
+
+                            Shape {
+                                Layout.alignment: Qt.AlignTop
+                                Layout.preferredWidth: 24
+                                Layout.preferredHeight: 24
+                                ShapePath {
+                                    strokeColor: root.palette.muted
+                                    strokeWidth: 1.4
+                                    fillColor: "transparent"
+                                    capStyle: ShapePath.RoundCap
+                                    joinStyle: ShapePath.RoundJoin
+                                    PathSvg { path: statusRow.modelData.icon }
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 5
+
                                 Text {
-                                    width: parent.width
-                                    text: tile.modelData.label
+                                    text: statusRow.modelData.label
                                     font.family: root.palette.font
                                     font.pixelSize: 10
-                                    font.letterSpacing: 0.5
+                                    font.letterSpacing: 1
                                     color: root.palette.muted
                                 }
                                 Text {
-                                    width: parent.width
-                                    text: tile.modelData.value
-                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                    text: statusRow.modelData.value
+                                    textFormat: Text.PlainText
+                                    wrapMode: Text.WrapAnywhere
                                     font.family: root.palette.font
-                                    font.pixelSize: 13
+                                    font.pixelSize: 16
                                     color: root.palette.foreground
                                 }
                                 Text {
-                                    width: parent.width
-                                    text: tile.modelData.detail
-                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                    text: statusRow.modelData.detail
+                                    textFormat: Text.PlainText
+                                    wrapMode: Text.Wrap
                                     font.family: root.palette.font
                                     font.pixelSize: 10
                                     color: root.palette.muted
                                 }
                             }
-                            HoverHandler { id: tileHover }
-                            ToolTip.visible: tileHover.hovered
-                            ToolTip.delay: 650
-                            ToolTip.text: tile.modelData.label + ": " + tile.modelData.value
-                                + " · " + tile.modelData.detail
+                        }
+                        Rectangle {
+                            width: parent.width
+                            height: 1
+                            color: root.palette.line
                         }
                     }
                 }
