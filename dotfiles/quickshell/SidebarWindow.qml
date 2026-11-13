@@ -188,6 +188,12 @@ PanelWindow {
                         Item { width: 1; height: 2 }
                     }
                 }
+                Item { width: 1; height: 4 }
+                SidebarSession {
+                    width: parent.width
+                    palette: root.palette
+                    sidebar: root.sidebar
+                }
             }
         }
 
