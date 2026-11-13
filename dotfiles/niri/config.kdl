@@ -1,6 +1,6 @@
 // https://yalter.github.io/niri/Configuration:-Input
 input {
-        touchpad {
+    touchpad {
         tap
         natural-scroll
     }
@@ -11,65 +11,40 @@ input {
     }
 }
 
-// ASUS external display (matched by monitor identity, usable on any workstation)
+// External displays share the global layout; keep hardware-specific settings here.
 output "ASUSTek COMPUTER INC XG32UCWMG T7LMQS028558" {
-  mode "3840x2160@120.000"
+    mode "3840x2160@120.000"
     backdrop-color "#000000"
-  // Some things I prefer on this screen
-    scale 1.0
-  layout {
-    gaps 20
-    default-column-width {
-      proportion 0.4
+    scale 1
+    layout {
+        gaps 20
     }
-  struts {
-    left 16
-    right 16
-    top 24
-    bottom 24
-  }
-  }
 }
 
 output "LG Electronics LG HDR 4K 0x0003CF4A" {
-    scale 1.0
-    layout {
-      default-column-width { proportion 0.4; }
-  struts {
-    left 16
-    right 16
-    top 24
-    bottom 24
-  }
-    }
+    scale 1
 }
 
-// office (high refresh rate)
+// Office display.
 output "LG Electronics LG ULTRAGEAR+ 308NTSUF9550" {
-    scale 1.0
-    layout {
-      default-column-width { proportion 0.4; }
-  struts {
-    left 16
-    right 16
-    top 24
-    bottom 24
-  }
-    }
+    scale 1
 }
 
-// meanovo display
+// meanovo display.
 output "Samsung Display Corp. ATNA40HQ10-0  0x0000003F" {
     position x=3845 y=700
     backdrop-color "#000000"
-	mode "2880x1800@120.000"
+    mode "2880x1800@120.000"
+    layout {
+        default-column-width { proportion 0.7; }
+        struts {}
+    }
 }
 
 cursor {
     // Hide the cursor after one second of inactivity.
     hide-after-inactive-ms 1000
-	xcursor-size 24
-	xcursor-theme "Adwaita"
+    xcursor-theme "Adwaita"
 }
 
 environment {
@@ -81,17 +56,18 @@ environment {
 
 layout {
     background-color "#000000"
-    gaps 16
     always-center-single-column
-    default-column-width { proportion 0.7; }
+    // Shared external-display layout; the laptop overrides width and struts.
+    default-column-width { proportion 0.4; }
+    struts {
+        left 16
+        right 16
+        top 24
+        bottom 24
+    }
     focus-ring {
         width 1
-     active-color "#b16286"
-        inactive-color "#505050"
-    }
-
-    border {
-        off
+        active-color "#b16286"
     }
 }
 
@@ -102,7 +78,6 @@ hotkey-overlay {
 }
 
 prefer-no-csd
-screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
 
 window-rule {
     match app-id=r#"firefox$"# title="^Picture-in-Picture$"
@@ -310,4 +285,3 @@ binds {
     // moving the mouse or pressing any other key.
     Mod+Shift+P { power-off-monitors; }
 }
-
