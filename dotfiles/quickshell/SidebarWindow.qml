@@ -36,13 +36,6 @@ PanelWindow {
         color: root.palette.dark ? "#000000" : root.palette.surface
         clip: true
 
-        Rectangle {
-            width: 1
-            height: parent.height
-            x: root.sidebar.side === "left" ? parent.width - 1 : 0
-            color: root.palette.line
-        }
-
         // Keep session access visible even when the content must scroll.
         SidebarSession {
             id: session
