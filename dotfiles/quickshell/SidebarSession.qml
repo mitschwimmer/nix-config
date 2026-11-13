@@ -14,8 +14,8 @@ Column {
     readonly property var actions: [
         { label: "Lock", icon: "M 5 10 L 19 10 L 19 21 L 5 21 Z M 8 10 L 8 7 A 4 4 0 0 1 16 7 L 16 10",
             command: ["workstation-lock"] },
-        { label: "Log out", icon: "M 10 4 L 5 4 L 5 20 L 10 20 M 14 8 L 18 12 L 14 16 M 18 12 L 8 12",
-            command: ["niri", "msg", "action", "quit", "--skip-confirmation"] },
+        { label: "Lock & suspend", icon: "M 20 15 A 9 9 0 0 1 9 3 A 9 9 0 1 0 20 15 Z",
+            command: ["workstation-suspend"] },
         { label: "Restart", icon: "M 3 11 A 9 9 0 1 1 5 18 M 3 4 L 3 11 L 10 11",
             command: ["systemctl", "reboot"] },
         { label: "Power off", icon: "M 12 2 L 12 12 M 6 5.5 A 9 9 0 1 0 18 5.5",

@@ -17,7 +17,7 @@ popups and an on-screen display, using the palette in `Palette.qml`, with red
 - `DesktopStatus.qml`: native UPower, NetworkManager and Bluetooth status.
 - `AudioState.qml`: PipeWire devices, system defaults, output volume and mute.
 - `SidebarAudio.qml`: visible output volume/mute and folded input/output device selectors.
-- `SidebarSession.qml`: folded lock, logout, restart and power-off controls.
+- `SidebarSession.qml`: folded lock, lock-and-suspend, restart and power-off controls.
 - `DotClock.qml`: font-independent dot-matrix clock.
 - `SidebarLogic.js`: exposed monitor edges and battery estimate formatting.
 - `Notifications.qml`: freedesktop notification server and popup state.
@@ -113,7 +113,7 @@ enabled. Quickshell 0.3.2 from the pinned unstable input provides the native net
 
 A fixed, understated **Session** footer uses a thin divider and a clickable
 row with a power icon and chevron rather than a filled button. It expands upward
-to reveal **Lock**, **Log out**, **Restart** and **Power off** in a two-column,
+to reveal **Lock**, **Lock & suspend**, **Restart** and **Power off** in a two-column,
 two-row grid with centered icons and labels. The extra
 disclosure click reduces accidental activation without requiring separate
 confirmations. Actions hide again whenever the drawer closes. The footer
@@ -121,8 +121,9 @@ stays accessible while the main content scrolls on short displays and aligns
 with the main content's horizontal margins.
 
 Lock invokes `workstation-lock`, the same standalone Quickshell lock service
-used by the Niri shortcut. Logout invokes
-`niri msg action quit --skip-confirmation`. Restart and shutdown use
+used by the Niri shortcut. **Lock & suspend** invokes `workstation-suspend`,
+which waits for `workstation-lock` to succeed before calling `systemctl suspend`.
+If locking fails, it does not suspend. Restart and shutdown use
 `systemctl reboot` and `systemctl poweroff` through the active logind
 session. All commands are launched without a shell or elevated privileges.
 
@@ -227,11 +228,12 @@ stationary-pointer timeout both inside the drawer and directly on the edge.
 Verify the wallpaper returns exactly to its original position, applications
 receive input outside the drawer and keyboard focus stays on the application.
 Check that the Session footer is always reachable and that expanding it reveals
-a two-by-two grid of Lock, Log out, Restart and Power off; verify icons and labels
+a two-by-two grid of Lock, Lock & suspend, Restart and Power off; verify icons and labels
 stay centered at both workstation display scales. Check that it folds again on
 drawer close.
-Test Lock normally; test logout, restart and power-off only when it is safe to
-end the current session. These actions do not have a second confirmation.
+Test Lock normally. Test Lock & suspend and verify that resuming requires
+authentication. Test restart and power-off only when it is safe to end the
+current session. These actions do not have a second confirmation.
 Check the wallpaper's rounded corners at both the outer edge and the edge
 next to the drawer when opening the sidebar from the left and right, including
 during the slide animation, rotation, crossfades and occupied-workspace effects.
