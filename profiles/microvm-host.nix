@@ -1,9 +1,8 @@
-{ config, lib, self, ... }:
+{ config, lib, pkgs, self, ... }:
 let
   cfg = config.services.kubernetesMicrovms;
   nodes = import ../kubernetes/nodes.nix;
   localNodes = lib.filterAttrs (_: node: node.host == config.networking.hostName) nodes;
-  tapNames = cfg.guests;
 in
 {
   options.services.kubernetesMicrovms = {
@@ -47,19 +46,20 @@ in
       restartIfChanged = false;
     });
 
-    # networkd owns only these dynamic TAPs. Existing host bridge/DHCP stays
-    # with the host's current NixOS networking backend.
-    systemd.network.enable = true;
-    systemd.network.networks = lib.optionalAttrs (tapNames != [ ]) {
-      "30-kubernetes-taps" = {
-        matchConfig.Name = lib.concatStringsSep " " tapNames;
-        networkConfig = { Bridge = cfg.bridge; LinkLocalAddressing = "no"; };
-        linkConfig.RequiredForOnline = "no";
-      };
-    };
-    systemd.services = lib.genAttrs (map (name: "microvm@${name}") cfg.guests) (_: {
-      serviceConfig.UMask = "0077";
-    });
+    # The host uses NixOS scripted networking for br0, not networkd.
+    # Attach each TAP after bridge creation, as part of its MicroVM unit.
+    systemd.services = lib.mkMerge [
+      (lib.genAttrs (map (name: "microvm@${name}") cfg.guests) (_: {
+        serviceConfig.UMask = "0077";
+      }))
+      (lib.listToAttrs (map (name: lib.nameValuePair "microvm-tap-interfaces@${name}" {
+        overrideStrategy = "asDropin";
+        requires = [ "${cfg.bridge}-netdev.service" ];
+        after = [ "${cfg.bridge}-netdev.service" ];
+        serviceConfig.ExecStartPost =
+          "${pkgs.iproute2}/bin/ip link set dev ${name} master ${cfg.bridge}";
+      }) cfg.guests))
+    ];
   } (lib.mkIf (cfg.uplink != null) {
     networking.useDHCP = lib.mkForce false;
     networking.bridges.${cfg.bridge}.interfaces = [ cfg.uplink ];

@@ -3,6 +3,10 @@
 Commands run on the physical host unless otherwise noted. Use the
 `-secure` NixOS flake variants for both hosts.
 
+The host's scripted `br0` bridge is kept intact. MicroVM TAP attachment uses
+systemd drop-ins ordered after `br0-netdev.service`. A host rebuild does not
+restart already-running MicroVMs; restart them individually after this change.
+
 ## Inspect
 
 ```sh

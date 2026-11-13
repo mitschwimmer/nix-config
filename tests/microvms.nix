@@ -67,7 +67,14 @@ in
       && configs.${name}.config.services.kubernetesMicrovms.guests
         == lib.optional (name == "meawhite") "k8s-cp-01"
       && !(configs.${name}.config.virtualisation.libvirtd.enable)
-      && c.systemd.network.networks."30-kubernetes-taps".networkConfig.Bridge == "br0")) hosts;
+      && lib.all (vm:
+        let unit = c.systemd.services."microvm-tap-interfaces@${vm}";
+        in
+          lib.elem "br0-netdev.service" unit.after
+          && lib.elem "br0-netdev.service" unit.requires
+          && unit.overrideStrategy == "asDropin"
+          && lib.hasSuffix " master br0" unit.serviceConfig.ExecStartPost
+      ) (builtins.attrNames c.microvm.vms))) hosts;
   # Force full module evaluation, including assertion and service generation,
   # for both enabled host paths as well as the disabled default configurations.
   enabledHostDerivations = lib.mapAttrs (_: c: c.system.build.toplevel.drvPath) hosts;
