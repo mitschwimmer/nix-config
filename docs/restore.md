@@ -191,22 +191,21 @@ join_guest() {
   '
 }
 
-CP02_IP="REPLACE_WITH_OBSERVED_CP02_IP"
-CP03_IP="REPLACE_WITH_OBSERVED_CP03_IP"
-WORKER_IP="REPLACE_WITH_OBSERVED_WORKER_IP"
-
-join_guest "$CP02_IP" /var/lib/rancher/k3s/server/token
-# Wait for cp-02 to join and confirm health; do not restart either voter.
-join_guest "$CP03_IP" /var/lib/rancher/k3s/server/token
-# Confirm three healthy control-plane/etcd members before maintenance.
-join_guest "$WORKER_IP" /var/lib/rancher/k3s/server/agent-token
+# This block only defines join_guest; it performs no join.
 ```
 
-**Do not execute the three calls blindly in one batch.** Run them in the
-shown order with manual health checks after each call; the comments above
-are mandatory gates, not automatic waits. In particular, with two etcd
-voters **both** are needed for quorum. Verify server logs/member health
-before adding cp-03 or restarting a server.
+In the **same trusted shell** where `join_guest` was defined, invoke
+the following **one command at a time**, replacing each IP with its
+observed reserved address. Stop between commands and verify the new
+member's Node readiness, K3s/etcd logs, Cilium health and cross-node
+connectivity before proceeding:
+
+1. `join_guest "REPLACE_WITH_OBSERVED_CP02_IP" /var/lib/rancher/k3s/server/token`
+2. **After cp-02 is a healthy etcd member:** `join_guest "REPLACE_WITH_OBSERVED_CP03_IP" /var/lib/rancher/k3s/server/token`
+3. **After all three etcd members are healthy:** `join_guest "REPLACE_WITH_OBSERVED_WORKER_IP" /var/lib/rancher/k3s/server/agent-token`
+
+In particular, with only two etcd voters **both** are needed for quorum.
+Do not restart either one between steps 1 and 2.
 
 The worker runs K3s `agent` only. It must not initialize etcd. Verify all
 four nodes and Cilium agents are Ready after it joins. The fresh cp-02
