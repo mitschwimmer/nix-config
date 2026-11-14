@@ -80,7 +80,7 @@ second voter down.
 
 If the VIP disappears or multiple servers claim it, check local readiness,
 Keepalived journals and multicast VRRP delivery (IP protocol 112) across
-both host bridges before migrating clients or rebooting other nodes.
+both host bridges before restarting any other control-plane nodes.
 On duplicate ownership, stop Keepalived on all three until the conflict is
 resolved, and use a server's direct API address for recovery. The VIP does
 **not** compensate for the loss of two etcd voters when `meawhite` fails.
