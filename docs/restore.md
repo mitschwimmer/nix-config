@@ -34,8 +34,11 @@ guest inventory. Each guest has a separate sparse 64 GiB ext4 `/var` state image
 - Physical-host LAN addresses: `meawhite` `192.168.1.137` and `meablack`
   `192.168.1.28`. The guests use bridged DHCP.
 - **Reserve `192.168.1.103` for cp-01** (MAC above) before its first boot.
-  `kubernetes/k3s.nix` and `kubernetes/cilium.nix` use this API address directly.
-  There is no API VIP.
+  `kubernetes/k3s.nix` and `kubernetes/cilium.nix` still use that API address
+  for initial bootstrap. Keepalived also declares reserved API VIP
+  `192.168.1.110/32` on the three server guests; no clients depend on it
+  until the separate cutover. Verify LAN VRRP ID 110 and multicast reachability
+  before activating Keepalived; see [operations.md](operations.md).
 - K3s uses three embedded-etcd servers; losing `meawhite` loses two voters.
   Cilium 1.20.4 and Argo CD chart 10.18.0 are bootstrapped by *cp-01's
   K3s Helm Controller*, not by GitOps.
@@ -283,7 +286,9 @@ k3s kubectl -n argocd get application homelab \
 ```
 
 Do not describe the cluster as host-HA: both cp-01 and cp-02 live on
-`meawhite`, and no API VIP is declared.
+`meawhite`. Keepalived may provide an API VIP but cannot recover etcd quorum
+after that physical host is lost. Validate VIP ownership and failover separately
+using [operations.md](operations.md); do not presume it works from Nix alone.
 
 ## What is deliberately *not* restored
 

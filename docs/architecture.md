@@ -3,7 +3,8 @@
 This is the **declared steady-state topology**, not a rollout history.
 To rebuild it, follow [restore.md](restore.md). Source of truth:
 `kubernetes/nodes.nix`, `kubernetes/guest.nix`, `kubernetes/k3s.nix`,
-`kubernetes/cilium.nix`, `kubernetes/argocd.nix` and the host MicroVM modules.
+`kubernetes/api-vip.nix`, `kubernetes/cilium.nix`,
+`kubernetes/argocd.nix` and the host MicroVM modules.
 
 ## Physical hosts and guests
 
@@ -23,16 +24,23 @@ recreated; for ordinary operations never delete them.
 The hosts bridge guest TAP interfaces to `br0`. `meawhite` retains
 `192.168.1.137` and `meablack` `192.168.1.28`; guests use DHCP. cp-01's
 MAC `02:6b:38:00:00:01` must be reserved at `192.168.1.103` because K3s
-and Cilium use this API endpoint directly. There is **no VIP**. The
-retired candidate worker identity with MAC suffix 04/CID 1004 is not reused.
+and Cilium currently use that API endpoint directly. Keepalived is now
+declared for each control-plane guest, with reserved VIP `192.168.1.110/32`
+on `lan0`, VRRP ID 110, and a local API `/readyz` fault check. All
+servers declare a matching K3s `--tls-san`. The clients still use cp-01
+until a **separate, tested cutover**. A Nix declaration is not evidence of
+live deployment or successful VIP failover. The retired candidate worker
+identity with MAC suffix 04/CID 1004 is not reused.
 
 ## Ownership and availability
 
 - NixOS owns both physical hosts, MicroVM declarations, K3s and cp-01's
   Cilium/Argo CD K3s HelmCharts.
 - K3s creates a **new** embedded-etcd cluster on cp-01; cp-02 and cp-03 join
-  as servers, worker-02 as agent. With three voters, one member can fail,
-  but loss of `meawhite` removes **two**, so this is **not** host-level HA.
+  as servers, worker-02 as agent. Keepalived provides an independent,
+  readiness-gated API VIP when deployed and verified. With three voters,
+  one member can fail, but loss of `meawhite` removes **two**, so this is
+  **not** host-level HA.
 - K3s disables Flannel, kube-proxy, Traefik, ServiceLB and local-storage
   where appropriate. Cilium 1.20.4 provides native routing and kube-proxy
   replacement with Pod CIDR `10.42.0.0/16`. The K3s service CIDR is

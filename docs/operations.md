@@ -99,3 +99,60 @@ never indiscriminately remove pressure or NotReady taints.
 - Review an explicit resource/data inventory before `nixos-install`,
   Disko, formatting, state-image removal, Helm release deletion or Argo
   pruning. Rebuilding a new cluster must not silently destroy the old one.
+
+## Stage Keepalived API VIP before changing clients
+
+The reserved API VIP is `192.168.1.110/32` on guest `lan0`. The three
+server guests declare multicast VRRP (ID 110), BACKUP/no-preemption,
+and a local HTTPS `/readyz` check. After two failed checks, weight 0
+forces VRRP FAULT; `init_fail` prevents claiming the VIP before it has
+twice passed the probe. The worker does not run Keepalived. VRRP runs in
+NixOS, not in Kubernetes or Cilium.
+
+**Keep K3s joiners and Cilium on `192.168.1.103:6443` in this stage.**
+There is no approved automated host deployment here.
+
+1. Confirm `192.168.1.110` has no other owner, VRRP ID 110 is unused on
+   the LAN, and multicast VRRP (IP protocol 112 to 224.0.0.18) traverses
+   both physical host bridges and the switch. If multicast is filtered,
+   stop and plan unicast VRRP with *observed* peer addresses; do not guess
+   cp-02/cp-03's DHCP IPs.
+2. Check all three etcd members have quorum, the four Nodes and all Cilium
+   agents are healthy, cp-01's direct API works, and recovery access is
+   available. Build/evaluate the new guest runners and signed host closures,
+   review the diff, and retain each previously booted runner as a GC root.
+3. Using [the one-guest procedure](#update-a-guest-safely), update/restart
+   **cp-02, then cp-03, then cp-01**, with full etcd/Node/Cilium recovery
+   between voters. On each guest inspect:
+
+   ```sh
+   systemctl status keepalived --no-pager
+   journalctl -u keepalived -b --no-pager
+   ip -4 address show dev lan0
+   curl -fsSk https://127.0.0.1:6443/readyz
+   ```
+
+   The insecure curl checks **local readiness only**. It is not an
+   authenticated, TLS-verified client acceptance check.
+4. When all three guests are running the new closure, verify **exactly one**
+   holds the VIP. From a trusted LAN client inspect the certificate SAN for
+   `192.168.1.110`, then exercise a kubeconfig that trusts the cluster CA
+   and points at `https://192.168.1.110:6443`. Verify that the two physical
+   bridges exchange VRRP adverts; a green local Keepalived unit alone does
+   not prove that each peer hears the others.
+5. Stop **only Keepalived** on the current VIP holder, without touching
+   K3s. Confirm a surviving, ready control plane claims the VIP and the
+   authenticated kubeconfig keeps working. Restart Keepalived and check
+   that `noPreempt` avoids needless failback. Repeat over the host boundary
+   while etcd quorum remains healthy.
+6. On split brain, duplicate VIP ownership, unready control planes or
+   failed connectivity, **stop Keepalived on all three guests**, keep
+   accessing `192.168.1.103:6443` directly and roll back affected guest
+   runners if needed. Do not migrate Cilium or K3s joiners yet.
+
+Only after these gates pass, review the separate client-cutover change:
+switch joining K3s nodes' `serverAddr` and the existing cp-01-owned Cilium
+HelmChart's `k8sServiceHost` to `192.168.1.110`. Never uninstall that
+HelmChart. Restart one node at a time and test both Cilium reconnecting
+during a cp-01 API outage and access via individual control-plane IPs.
+The VIP does **not** fix etcd quorum loss if meawhite fails.

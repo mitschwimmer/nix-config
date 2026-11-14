@@ -23,6 +23,7 @@ All outputs target x86_64-linux.
 | Recreate the Kubernetes cluster | `docs/restore.md` | `docs/backup-backlog.md`, `kubernetes/nodes.nix`, `kubernetes/k3s.nix` |
 | Argo CD bootstrap or GitOps ownership | `kubernetes/argocd.nix` | `docs/gitops.md`, `kubernetes/cilium.nix` |
 | Kubernetes guest identity, resources or storage | `kubernetes/nodes.nix` | `kubernetes/guest.nix`, `docs/architecture.md`, `docs/operations.md` |
+| Kubernetes API VIP / Keepalived | `kubernetes/api-vip.nix` | `kubernetes/k3s.nix`, `docs/operations.md` |
 | Shared profile expectations | `tests/profiles.nix` | `.github/workflows/validation.yml` |
 
 Use `rg --files` to locate files and `rg -n 'pattern' <relevant-paths>` to locate

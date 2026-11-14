@@ -52,6 +52,7 @@ in
         "--disable-network-policy"
         "--disable-kube-proxy"
         "--secrets-encryption"
+        "--tls-san=192.168.1.110"
       ]
       && lib.all (port: lib.elem port c.networking.firewall.allowedTCPPorts) [
         6443 9345 2379 2380 10250
@@ -101,6 +102,35 @@ in
       && c.networking.firewall.allowPing
       && !(lib.elem 8472 c.networking.firewall.allowedUDPPorts)
       && lib.elem "L+ /etc/rancher/node - - - - /var/lib/rancher/node" c.systemd.tmpfiles.rules);
+  apiVip = check "three independent Keepalived peers with readiness-gated VIP; no worker VIP"
+    (lib.all (name:
+      let
+        c = guests.${name};
+        v = c.services.keepalived.vrrpInstances.k3s_api;
+        health = c.services.keepalived.vrrpScripts.check_k3s_api;
+        vip = builtins.head v.virtualIps;
+      in
+        c.services.keepalived.enable
+        && c.services.keepalived.openFirewall
+        && c.services.keepalived.enableScriptSecurity
+        && v.state == "BACKUP"
+        && v.interface == "lan0"
+        && v.virtualRouterId == 110
+        && v.priority == (if name == "k8s-cp-01" then 150 else if name == "k8s-cp-03" then 140 else 130)
+        && v.noPreempt
+        && vip.addr == "192.168.1.110/32"
+        && vip.dev == "lan0"
+        && v.trackScripts == [ "check_k3s_api" ]
+        && health.weight == 0
+        && health.interval == 3
+        && health.fall == 2
+        && health.rise == 2
+        && health.user == "root"
+        && lib.hasInfix "init_fail" health.extraConfig
+        && lib.elem "--tls-san=192.168.1.110" c.services.k3s.extraFlags
+    ) [ "k8s-cp-01" "k8s-cp-02" "k8s-cp-03" ]
+      && !guests."k8s-worker-02".services.keepalived.enable
+      && !(lib.elem "--tls-san=192.168.1.110" guests."k8s-worker-02".services.k3s.extraFlags));
   workloadScheduling = check "cp-01/cp-03 run agents without registration taints; cp-02 is reserved"
     (lib.all (name:
       let c = guests.${name}; in
