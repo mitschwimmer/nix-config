@@ -60,6 +60,31 @@ new SSH session and guest connectivity before committing. See the host
 READMEs for physical NIC and recovery constraints. Do not blindly activate
 a remote bridge change.
 
+## Kubernetes API VIP
+
+The control-plane guests use Keepalived to serve `192.168.1.110:6443` on
+`lan0` (VRRP ID 110). K3s joiners and Cilium use this address; cp-01's
+`192.168.1.103:6443` remains available for direct recovery. Keepalived
+depends on the **local** kube-apiserver readiness endpoint, not a client
+certificate or the Cilium datapath.
+
+On each control-plane guest, check `ip -4 addr show dev lan0` and
+`systemctl status keepalived`. Exactly one guest must hold
+`192.168.1.110/32`. Check local readiness with
+`curl -fsSk https://127.0.0.1:6444/readyz` (expected: `ok`), then verify
+an authenticated `k3s kubectl --server=https://192.168.1.110:6443 get nodes`.
+To test failover, stop **only** Keepalived on the current VIP holder,
+confirm another ready server takes ownership and the VIP API still works,
+then start Keepalived again. Check etcd quorum throughout; do not take a
+second voter down.
+
+If the VIP disappears or multiple servers claim it, check local readiness,
+Keepalived journals and multicast VRRP delivery (IP protocol 112) across
+both host bridges before migrating clients or rebooting other nodes.
+On duplicate ownership, stop Keepalived on all three until the conflict is
+resolved, and use a server's direct API address for recovery. The VIP does
+**not** compensate for the loss of two etcd voters when `meawhite` fails.
+
 ## Join credentials and node replacement
 
 The cp-01 server issues new K3s tokens; each joiner's

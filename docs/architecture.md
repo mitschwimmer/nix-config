@@ -3,7 +3,8 @@
 This is the **declared steady-state topology**, not a rollout history.
 To rebuild it, follow [restore.md](restore.md). Source of truth:
 `kubernetes/nodes.nix`, `kubernetes/guest.nix`, `kubernetes/k3s.nix`,
-`kubernetes/cilium.nix`, `kubernetes/argocd.nix` and the host MicroVM modules.
+`kubernetes/api-vip.nix`, `kubernetes/cilium.nix`, `kubernetes/argocd.nix`
+and the host MicroVM modules.
 
 ## Physical hosts and guests
 
@@ -22,14 +23,20 @@ recreated; for ordinary operations never delete them.
 
 The hosts bridge guest TAP interfaces to `br0`. `meawhite` retains
 `192.168.1.137` and `meablack` `192.168.1.28`; guests use DHCP. cp-01's
-MAC `02:6b:38:00:00:01` must be reserved at `192.168.1.103` because K3s
-and Cilium use this API endpoint directly. There is **no VIP**. The
-retired candidate worker identity with MAC suffix 04/CID 1004 is not reused.
+MAC `02:6b:38:00:00:01` remains reserved at `192.168.1.103` for direct
+recovery access. K3s joiners and Cilium use the API VIP
+`192.168.1.110:6443`, owned by Keepalived on the three control-plane guests
+(`lan0`, multicast VRRP, virtual router ID 110). Keepalived claims the VIP
+only while the local kube-apiserver reports ready at
+`https://127.0.0.1:6444/readyz`; this exact endpoint permits anonymous
+readiness probes without a client certificate. Every server includes the VIP
+in its K3s serving-certificate SAN. The retired candidate worker identity
+with MAC suffix 04/CID 1004 is not reused.
 
 ## Ownership and availability
 
-- NixOS owns both physical hosts, MicroVM declarations, K3s and cp-01's
-  Cilium/Argo CD K3s HelmCharts.
+- NixOS owns both physical hosts, MicroVM declarations, K3s, Keepalived,
+  and cp-01's Cilium/Argo CD K3s HelmCharts.
 - K3s creates a **new** embedded-etcd cluster on cp-01; cp-02 and cp-03 join
   as servers, worker-02 as agent. With three voters, one member can fail,
   but loss of `meawhite` removes **two**, so this is **not** host-level HA.
