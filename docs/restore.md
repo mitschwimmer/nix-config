@@ -33,9 +33,11 @@ guest inventory. Each guest has a separate sparse 64 GiB ext4 `/var` state image
 
 - Physical-host LAN addresses: `meawhite` `192.168.1.137` and `meablack`
   `192.168.1.28`. The guests use bridged DHCP.
-- **Reserve `192.168.1.103` for cp-01** (MAC above) before its first boot.
-  `kubernetes/k3s.nix` and `kubernetes/cilium.nix` use this API address directly.
-  There is no API VIP.
+- **Reserve `192.168.1.103` for cp-01** (MAC above) for direct recovery access
+  and **reserve `192.168.1.110` as the API VIP** outside DHCP. K3s joiners and
+  Cilium use the VIP on port 6443. Keepalived runs on the three server guests,
+  independently of Cilium; it uses multicast VRRP on `lan0` (router ID 110)
+  and a local kube-apiserver readiness check.
 - K3s uses three embedded-etcd servers; losing `meawhite` loses two voters.
   Cilium 1.20.4 and Argo CD chart 10.18.0 are bootstrapped by *cp-01's
   K3s Helm Controller*, not by GitOps.
@@ -59,8 +61,10 @@ and the code disagree.
 2. Check out the intended current `main` of **both repositories**, including
    `nix-config/flake.lock`. This runbook intentionally does not pin an
    historical Git commit or require restoring the old cluster's token.
-3. Reestablish LAN routing, the physical-host DHCP reservations and cp-01's
-   `192.168.1.103` reservation. Record the *observed* DHCP leases for cp-02,
+3. Reestablish LAN routing, the physical-host DHCP reservations, cp-01's
+   `192.168.1.103` reservation, and the reserved `192.168.1.110` VIP.
+   Confirm VRRP ID 110 is free and multicast VRRP (IP protocol 112) works
+   across the host bridges. Record the *observed* DHCP leases for cp-02,
    cp-03 and worker-02 by MAC. Verify the interface names and hardware IDs
    in the host configurations against replacement hardware.
 4. Decide explicitly whether the original disks or MicroVM `state.img` files
@@ -132,9 +136,13 @@ new K3s server token, initializes embedded etcd and installs its two K3s
 HelmCharts. The other guests may boot for DHCP/SSH but K3s is intentionally
 inactive until each receives its new join token.
 
-Verify cp-01 receives `192.168.1.103` and has a persistent `/var`. Verify the
-new SSH host fingerprint via a trusted channel before accepting it; regenerated
-host keys are expected. Then check:
+Verify cp-01 receives `192.168.1.103` and has a persistent `/var`.
+Keepalived must claim `192.168.1.110` after its local API becomes ready;
+Cilium's bootstrap HelmChart already points at that VIP. Verify VIP
+reachability before proceeding, and use cp-01's direct address to diagnose
+startup if the VIP is absent. Verify the new SSH host fingerprint via a
+trusted channel before accepting it; regenerated host keys are expected.
+Then check:
 
 ```sh
 ssh root@192.168.1.103 'findmnt /var; systemctl status k3s --no-pager'
@@ -149,6 +157,9 @@ Do not reinstall or create a second Cilium Helm release. **Do not wait for
 Argo CD workloads at this stage**: the chart selects the not-yet-joined worker.
 
 ## 3. Join cp-02, cp-03, then worker-02
+
+The joining K3s nodes use `https://192.168.1.110:6443`; cp-01's direct
+address remains the token-copy and emergency-recovery path.
 
 For each joiner, use the router to obtain and reserve its **observed** IP.
 On that guest, confirm the hostname/MAC, empty persistent `/var`, verified
@@ -263,6 +274,9 @@ new one-time installation instructions.
 - CoreDNS, metrics-server and `kubectl top nodes` work.
 - The K3s-owned Cilium and Argo CD HelmCharts are healthy and remain
   independent of the Argo Application tree.
+- Exactly one healthy control-plane guest holds `192.168.1.110/32` and
+  authenticated API access via `https://192.168.1.110:6443` works with
+  its serving certificate. Verify VIP failover between control planes.
 - `argocd/homelab` is `Synced` and `Healthy`. Any applications currently
   committed in `argo` must reach their expected states too. Verify a real
   workload's behavior, not just an Argo sync badge.
@@ -283,7 +297,7 @@ k3s kubectl -n argocd get application homelab \
 ```
 
 Do not describe the cluster as host-HA: both cp-01 and cp-02 live on
-`meawhite`, and no API VIP is declared.
+`meawhite`; the API VIP cannot restore etcd quorum if that host fails.
 
 ## What is deliberately *not* restored
 
