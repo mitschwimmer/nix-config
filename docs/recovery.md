@@ -21,3 +21,11 @@
   etcd state as an automatic retry.
 - Retired Talos images at `/var/lib/libvirt/talos` and `/data/talos`
   are separate legacy data. Do not delete or import them implicitly.
+
+- Before cp-03 joins, a failed meablack bridge test can revert to its preserved
+  host closure through the timed procedure in [operations.md](operations.md).
+  The timer is runtime-only and needs a functioning host; it is not a network
+  recovery guarantee or an etcd backup. Use console if reconnection fails.
+- Once cp-03 joins, host-network rollback may also stop that etcd member.
+  It does not undo cluster membership or restore its datastore. Check health
+  and quorum first; preserve the guest image and use a reviewed recovery plan.

@@ -33,4 +33,5 @@ jobs:
         run: |
           nix build --no-update-lock-file --no-link --print-build-logs \
             .#nixosConfigurations.k8s-cp-01.config.microvm.declaredRunner \
-            .#nixosConfigurations.k8s-cp-02.config.microvm.declaredRunner
+            .#nixosConfigurations.k8s-cp-02.config.microvm.declaredRunner \
+            .#nixosConfigurations.k8s-cp-03.config.microvm.declaredRunner

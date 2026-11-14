@@ -2,7 +2,7 @@
 
 let
   bootstrapServer = name == "k8s-cp-01";
-  joiningServer = name == "k8s-cp-02";
+  joiningServer = lib.elem name [ "k8s-cp-02" "k8s-cp-03" ];
   enabledServer = bootstrapServer || joiningServer;
   # Runtime file on persistent /var, never a Nix path literal or store secret.
   joinTokenFile = "/var/lib/rancher/k3s/join-token";

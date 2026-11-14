@@ -9,10 +9,6 @@ let
       services.kubernetesMicrovms = {
         enable = lib.mkForce true;
         guests = lib.mkForce (builtins.attrNames (lib.filterAttrs (_: n: n.host == name) nodes));
-      } // lib.optionalAttrs (name == "meablack") {
-        # Evaluation fixture only: not deployment values or a real NIC.
-        uplink = lib.mkForce "fixture0";
-        bridgeMac = lib.mkForce "02:00:00:00:ff:01";
       };
     } ];
   }).config;
@@ -62,11 +58,12 @@ in
       ]
       && lib.elem "L+ /etc/rancher/node - - - - /var/lib/rancher/node" c.systemd.tmpfiles.rules
       && lib.all (name: !guests.${name}.services.k3s.enable)
-        (lib.filter (name: !(lib.elem name [ "k8s-cp-01" "k8s-cp-02" ])) (builtins.attrNames nodes)));
-  k3sJoin = check "cp-02 joins existing etcd using only a protected runtime token file"
+        (lib.filter (name: !(lib.elem name [ "k8s-cp-01" "k8s-cp-02" "k8s-cp-03" ])) (builtins.attrNames nodes)));
+  k3sJoin = lib.genAttrs [ "k8s-cp-02" "k8s-cp-03" ] (name:
+    check "${name}: joins existing etcd using only a protected runtime token file"
     (let
       first = guests."k8s-cp-01";
-      c = guests."k8s-cp-02";
+      c = guests.${name};
     in
       c.services.k3s.enable
       && c.services.k3s.role == "server"
@@ -86,7 +83,7 @@ in
             [ 6443 9345 2379 2380 10250 4240 ]
           && c.networking.firewall.allowPing
           && !(lib.elem 8472 c.networking.firewall.allowedUDPPorts)
-      ) [ "k8s-cp-01" "k8s-cp-02" ]);
+      ) [ "k8s-cp-01" "k8s-cp-02" "k8s-cp-03" ]));
   containerdCni = check "containerd v3 imports persistent Cilium paths"
     (let
       dropin = builtins.readFile ../kubernetes/containerd-cni.toml;
@@ -97,7 +94,7 @@ in
           && lib.any (lib.hasPrefix
             "L+ /var/lib/rancher/k3s/agent/etc/containerd/config-v3.toml.d/10-cni.toml - - - - "
           ) rules
-      ) [ "k8s-cp-01" "k8s-cp-02" ]
+      ) [ "k8s-cp-01" "k8s-cp-02" "k8s-cp-03" ]
       && lib.all (fragment: lib.hasInfix fragment dropin) [
         "[plugins.'io.containerd.cri.v1.runtime'.cni]"
         "bin_dirs = [\"/var/lib/rancher/k3s/data/cni\"]"
@@ -132,9 +129,9 @@ in
   hosts = lib.mapAttrs (name: c: check "${name}: opt-in guests without mass restarts"
     (builtins.length (builtins.attrNames c.microvm.vms) == (if name == "meawhite" then 3 else 2)
       && lib.all (vm: !vm.restartIfChanged) (builtins.attrValues c.microvm.vms)
-      && configs.${name}.config.services.kubernetesMicrovms.enable == (name == "meawhite")
+      && configs.${name}.config.services.kubernetesMicrovms.enable
       && configs.${name}.config.services.kubernetesMicrovms.guests
-        == lib.optionals (name == "meawhite") [ "k8s-cp-01" "k8s-cp-02" ]
+        == (if name == "meawhite" then [ "k8s-cp-01" "k8s-cp-02" ] else [ "k8s-cp-03" ])
       && !(configs.${name}.config.virtualisation.libvirtd.enable)
       && lib.all (vm:
         let unit = c.systemd.services."microvm-tap-interfaces@${vm}";
@@ -144,7 +141,15 @@ in
           && unit.overrideStrategy == "asDropin"
           && lib.hasSuffix " master br0" unit.serviceConfig.ExecStartPost
       ) (builtins.attrNames c.microvm.vms))) hosts;
+  meablackBridge = check "meablack moves host DHCP to br0 while retaining the observed eno1 MAC"
+    (let c = configs.meablack.config; in
+      c.networking.bridges.br0.interfaces == [ "eno1" ]
+      && !c.networking.interfaces.eno1.useDHCP
+      && c.networking.interfaces.br0.useDHCP
+      && c.networking.interfaces.br0.macAddress == "24:4b:fe:03:c4:69"
+      && builtins.attrNames c.microvm.vms == [ "k8s-cp-03" ]
+      && !c.microvm.vms."k8s-cp-03".restartIfChanged);
   # Force full module evaluation, including assertion and service generation,
-  # for both enabled host paths as well as the disabled default configurations.
+  # for both host fixtures, including the still-disabled workers.
   enabledHostDerivations = lib.mapAttrs (_: c: c.system.build.toplevel.drvPath) hosts;
 }
