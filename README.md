@@ -130,7 +130,7 @@ Deeper checks are retained as manual workflows:
 - **meablack NixOS build** / **meawhite NixOS build**: evaluate and build the
   server, Secure Boot variant and offline installer; check installer scripts.
 - **MicroVM foundation**: evaluate topology, enabled-host fixtures and guest
-  runners, then build the initial k8s-cp-01 guest image.
+  runners, then build the k8s-cp-01 and k8s-cp-02 guest images.
 
 Once a workflow exists on `main`, use **Actions → Run workflow** and select the
 branch to check. Newly added manual workflows become dispatchable after merging;

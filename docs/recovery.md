@@ -11,5 +11,13 @@
 - Secure an encrypted off-host K3s server token, etcd snapshots and future
   SOPS/age keys. Test restore before claiming durability; local snapshots do
   not protect against physical-host loss.
+- For the cp-02 staging expansion, encrypted off-host backup and restore
+  verification were explicitly deferred on 2026-11-14. They are still
+  outstanding; the deployment must not be described as recoverable or HA.
+- With exactly two etcd voters, either member being unavailable loses quorum.
+  Do not perform a failure/reboot test or remove a member casually. For a
+  partial join, preserve the guest's state image and inspect K3s/etcd logs and
+  membership before choosing recovery. Never use `cluster-reset` or delete
+  etcd state as an automatic retry.
 - Retired Talos images at `/var/lib/libvirt/talos` and `/data/talos`
   are separate legacy data. Do not delete or import them implicitly.

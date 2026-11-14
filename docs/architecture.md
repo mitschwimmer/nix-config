@@ -2,9 +2,11 @@
 
 Five NixOS 26.05 guests run under Cloud Hypervisor on the two Secure Boot hosts.
 Only `k8s-cp-01` is enabled, on meawhite; it initializes K3s embedded etcd.
+cp-02 has a join configuration but is not enabled on the host.
 The other four guests, Keepalived and OpenEBS are not deployed.
 Cilium 1.20.4 is declared via the K3s HelmChart bootstrap resource; runtime
-acceptance is pending. Pin the DHCP address 192.168.1.103 until an API VIP
+acceptance on cp-01 was reported on 2026-11-13; two-node acceptance is pending.
+Pin the DHCP address 192.168.1.103 until an API VIP
 replaces it in the Cilium configuration.
 
 | Guest | Host | Role | vCPU / GiB RAM | MAC suffix | vsock CID |
@@ -27,8 +29,16 @@ interface/MAC and migrate DHCP to `br0` with console or timed rollback.
 The first server generates a K3s token under
 `/var/lib/rancher/k3s/server/token`. Its `/etc/rancher/node` is linked to
 persistent `/var/lib/rancher/node`. Keep the token encrypted off-host.
-Future joiners need runtime secret provisioning, not Nix-store tokens.
+cp-02 reads the full server token from `/var/lib/rancher/k3s/join-token`
+(root:root, 0600), provisioned over SSH outside Nix. With no file its K3s
+unit is skipped; empty, symlinked or incorrectly permissioned files fail startup.
+The join endpoint is `https://192.168.1.103:6443`, also used by Cilium.
+There is no VIP or additional certificate name in this staging step.
+Only cp-01 declares the Cilium HelmChart; its DaemonSet extends to cp-02.
+Other guests still have K3s disabled.
 
+At two voting members, quorum is two: neither member may fail. This is a
+transitional expansion stage, not HA. Plan cp-03 promptly.
 Two of three etcd servers are planned for meawhite: loss of meawhite
 will lose quorum. The cluster is not symmetric host-HA. The Cilium bootstrap
 must converge before expecting Kubernetes nodes to become Ready.
