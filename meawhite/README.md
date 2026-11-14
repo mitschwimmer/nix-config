@@ -47,10 +47,10 @@ and verify `ip -4 addr show br0`, `ip -4 route`, and reachability from
 `meanovo` before cancelling rollback. Only then consider making the
 change persistent across reboots.
 
-The bridge remains in place for NixOS MicroVMs. The previous Talos/NixVirt
-configuration is retired. Before activating this revision, shut the old guest
-down as described in [../docs/bootstrap.md](../docs/bootstrap.md). Its existing
-disk files are retained; the new guests do not reuse them.
+The bridge serves the NixOS MicroVMs. The previous Talos/NixVirt
+configuration is retired and its disk files are separate legacy data. When
+recreating the cluster, follow [../docs/restore.md](../docs/restore.md).
+Never boot or delete legacy guest state as an incidental rebuild step.
 
 ## Build the offline USB
 
