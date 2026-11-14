@@ -19,7 +19,8 @@ All outputs target x86_64-linux.
 | tmux | `home/henner/tmux.nix` | README's Terminal section |
 | Graphical apps or desktop dotfiles | `home/henner/desktop.nix` | Only the relevant app directory in `dotfiles/` |
 | Server hardware, storage or installation | `<host>/configuration.nix` | Host-local `disko.nix`, `installer.nix`, referenced scripts; runbook section in `<host>/README.md` |
-| MicroVM hosts or bridge | `<host>/microvms.nix` | `profiles/microvm-host.nix`, `docs/bootstrap.md` |
+| MicroVM hosts or bridge | `<host>/microvms.nix` | `profiles/microvm-host.nix`, `docs/architecture.md`, `docs/operations.md` |
+| Recreate the Kubernetes cluster | `docs/restore.md` | `docs/backup-backlog.md`, `kubernetes/nodes.nix`, `kubernetes/k3s.nix` |
 | Argo CD bootstrap or GitOps ownership | `kubernetes/argocd.nix` | `docs/gitops.md`, `kubernetes/cilium.nix` |
 | Kubernetes guest identity, resources or storage | `kubernetes/nodes.nix` | `kubernetes/guest.nix`, `docs/architecture.md`, `docs/operations.md` |
 | Shared profile expectations | `tests/profiles.nix` | `.github/workflows/validation.yml` |

@@ -3,9 +3,12 @@
 For targeted exploration and validation commands, start with [AGENTS.md](AGENTS.md).
 Host installation and recovery procedures are in [meablack/README.md](meablack/README.md),
 [meawhite/README.md](meawhite/README.md), and the staged workstation
-[meanovo boot runbook](meanovo/README.md). The Kubernetes MicroVM foundation
-and implementation status are in [docs/architecture.md](docs/architecture.md);
-start deployment with [docs/bootstrap.md](docs/bootstrap.md).
+[meanovo boot runbook](meanovo/README.md). The Kubernetes MicroVMs are declared in [docs/architecture.md](docs/architecture.md).
+To recreate the **current Git-defined** cluster from a clean state, start with
+[docs/restore.md](docs/restore.md); the remaining off-host prerequisites are
+tracked in [docs/backup-backlog.md](docs/backup-backlog.md). Ordinary maintenance
+is in [docs/operations.md](docs/operations.md). This is a fresh rebuild, not
+point-in-time restoration of Kubernetes or application data.
 
 Every installed machine is composed through `mkHost` in `flake.nix`:
 
