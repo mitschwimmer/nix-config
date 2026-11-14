@@ -26,12 +26,13 @@ jobs:
           for host in meablack meablack-secure meawhite meawhite-secure; do
             nix eval --no-update-lock-file --raw ".#nixosConfigurations.$host.config.system.build.toplevel.drvPath"
           done
-          for guest in k8s-cp-01 k8s-cp-02 k8s-cp-03 k8s-worker-01 k8s-worker-02; do
+          for guest in k8s-cp-01 k8s-cp-02 k8s-cp-03 k8s-worker-02; do
             nix eval --no-update-lock-file --raw ".#nixosConfigurations.$guest.config.microvm.declaredRunner.drvPath"
           done
-      - name: Build bootstrap and joining control-plane runners and guest images
+      - name: Build control-plane and worker runners and guest images
         run: |
           nix build --no-update-lock-file --no-link --print-build-logs \
             .#nixosConfigurations.k8s-cp-01.config.microvm.declaredRunner \
             .#nixosConfigurations.k8s-cp-02.config.microvm.declaredRunner \
-            .#nixosConfigurations.k8s-cp-03.config.microvm.declaredRunner
+            .#nixosConfigurations.k8s-cp-03.config.microvm.declaredRunner \
+            .#nixosConfigurations.k8s-worker-02.config.microvm.declaredRunner
