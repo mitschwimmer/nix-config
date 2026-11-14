@@ -128,6 +128,9 @@ in
         && health.user == "root"
         && lib.hasInfix "init_fail" health.extraConfig
         && lib.elem "--tls-san=192.168.1.110" c.services.k3s.extraFlags
+        && lib.any
+          (lib.hasPrefix "--kube-apiserver-arg=authentication-config=")
+          c.services.k3s.extraFlags
     ) [ "k8s-cp-01" "k8s-cp-02" "k8s-cp-03" ]
       && !guests."k8s-worker-02".services.keepalived.enable
       && !(lib.elem "--tls-san=192.168.1.110" guests."k8s-worker-02".services.k3s.extraFlags));
