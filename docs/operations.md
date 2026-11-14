@@ -162,3 +162,49 @@ member. Continue with cp-03's DHCP reservation and inactive-service checks in
 
 References: [NixOS configuration changes](https://nixos.org/manual/nixos/stable/#sec-changing-config),
 [systemd transient services/timers](https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html).
+
+## Reduce control-plane RAM
+
+The declared target is 2048 MiB per server with 2 vCPUs retained. Existing
+running VMs keep their 4096 MiB allocation until their updated host-side
+runner is installed and the VM is restarted. A guest-internal reboot alone
+does not replace the Cloud Hypervisor runner/memory limit.
+
+1. From the clean reviewed checkout, run `tests/microvms.nix`, evaluate the
+   three declared runners and all four installed host variants, then build
+   the three runners plus `meawhite-secure` and `meablack-secure` toplevels.
+2. Before deploying either host, preserve the currently booted runners as GC
+   roots for cp-01/cp-02 on meawhite and cp-03 on meablack, using the existing
+   update procedure. Give them distinct `-before-2g` root names. Keep all
+   state images, tokens, MACs, names and vsock CIDs intact.
+3. Deploy the two secure hosts. Their bridge configurations are already
+   accepted; do not repeat the initial meablack bridge cutover. Existing VMs
+   retain `restartIfChanged = false`; do not restart any VM in the host
+   deployment command.
+4. Recheck three Ready Nodes, Cilium 3/3 node/endpoint health and metrics.
+   Separate etcdctl inspection was explicitly deferred by the operator;
+   these checks do not claim it was performed. Restart only cp-03 first:
+
+   ```sh
+   # On meablack, after preserving its old runner and deploying the host:
+   sudo systemctl start install-microk8s-cp-03.service
+   sudo systemctl restart microvm@k8s-cp-03
+   ```
+
+5. Verify that cp-03 now reports roughly 2 GiB total RAM minus guest kernel
+   overhead, the same IP/SSH identity and persistent ext4 `/var`, K3s active,
+   its Node Ready, Cilium 3/3 and metrics recovered. Repeat the host-boundary
+   Pod-IP and Service-DNS tests. Observe memory during normal activity;
+   check MemAvailable, `/proc/pressure/memory`, pod restarts and kernel OOM
+   events. The sampling data at 4 GiB is not a guarantee that 2 GiB is enough.
+6. Only if cp-03 is stable, repeat individually for cp-02, then cp-01, using
+   their install/VM units on meawhite. Wait for all three nodes and Cilium
+   health to recover between each restart. cp-01 is still Cilium's fixed API
+   endpoint, so its restart can interrupt Cilium API access; the API on cp-02
+   can be used to observe the cluster during that step. No VIP is provided.
+
+If a guest fails to recover, experiences OOM kills or sustained memory
+pressure, stop the rollout. Restore that guest's saved 4 GiB runner through
+the existing runner rollback procedure, retaining its state image, and adjust
+or revert the declarative RAM change. Do not restart a second etcd member
+while one is unavailable. Keep recovery GC roots until acceptance is complete.

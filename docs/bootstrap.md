@@ -224,7 +224,7 @@ References: [K3s joining servers](https://docs.k3s.io/datastore/ha-embedded),
 Observed on 2026-11-14: host `192.168.1.28/24`, gateway `192.168.1.1`, physical
 uplink `eno1`, MAC `24:4b:fe:03:c4:69`, 62 GiB RAM with 61 GiB available and
 323 GiB free on `/var/lib`'s filesystem. cp-03 uses MAC `02:6b:38:00:00:03`,
-vsock CID 1003, 2 vCPU, 4096 MiB RAM and a 64 GiB sparse persistent image.
+vsock CID 1003, 2 vCPU, 2048 MiB RAM and a 64 GiB sparse persistent image.
 Its IP is not allocated here.
 
 1. Confirm cp-01/cp-02 remain Ready and reachable, including Cilium 2/2 and
