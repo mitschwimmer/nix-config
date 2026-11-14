@@ -1,6 +1,6 @@
 # Bootstrap k8s-cp-01
 
-Both physical hosts use Secure Boot. meawhite enables cp-01/cp-02 and
+Both physical hosts use Secure Boot. meawhite enables cp-01/cp-02/worker-02 and
 meablack enables cp-03. Only cp-01 initializes the cluster; fresh joiners
 boot without K3s until their runtime token is provisioned. Obtain each first
 DHCP lease before reserving its address and joining. For cp-03, first perform
@@ -96,7 +96,8 @@ ssh root@192.168.1.103 'k3s kubectl get nodes; k3s kubectl get pods -A'
 
 This is an activation procedure after PR review, successful evaluation/builds
 and an explicit deployment decision. Merging does not deploy the host.
-`meawhite/microvms.nix` lists cp-01 and cp-02; workers stay disabled.
+`meawhite/microvms.nix` lists cp-01, cp-02 and worker-02; fresh joiners
+remain inactive in K3s until their credential is provisioned.
 A DHCP reservation is not required to boot a fresh cp-02 for its first lease.
 
 1. Recheck cp-01's node/pod health and retain its observed address
@@ -149,7 +150,7 @@ up the new 4240 rule through a host rebuild. Follow the live firewall step in
 
 ## Provision a joiner's token and join
 
-Use this for a fresh cp-02 or cp-03 only after its DHCP lease is reserved,
+Use this for a fresh cp-02, cp-03 or worker-02 only after its DHCP lease is reserved,
 SSH host key is independently verified, persistent `/var` is checked, and
 K3s is inactive because the token file is absent. For cp-03, finish and confirm
 the bridge cutover first. Keep both existing etcd members running.
@@ -164,6 +165,8 @@ bash <<'BASH'
 set -euo pipefail
 set +x
 JOIN_IP="REPLACE_WITH_RESERVED_JOINER_IP"
+# Servers use server/token; for worker-02 set this to server/agent-token.
+TOKEN_SOURCE=/var/lib/rancher/k3s/server/token
 trap 'echo "Abbruch bei Zeile $LINENO" >&2' ERR
 
 # Fail rather than overwrite credentials or reuse an initialized etcd node.
@@ -177,7 +180,7 @@ ssh -n -o StrictHostKeyChecking=yes root@"$JOIN_IP" '
 
 # Both remote endpoints authenticate through the workstation, without agent forwarding.
 scp -3 -o StrictHostKeyChecking=yes \
-  root@192.168.1.103:/var/lib/rancher/k3s/server/token \
+  root@192.168.1.103:"$TOKEN_SOURCE" \
   root@"$JOIN_IP":/var/lib/rancher/k3s/join-token.pending </dev/null
 
 ssh -n -o StrictHostKeyChecking=yes root@"$JOIN_IP" '
@@ -224,7 +227,7 @@ References: [K3s joining servers](https://docs.k3s.io/datastore/ha-embedded),
 Observed on 2026-11-14: host `192.168.1.28/24`, gateway `192.168.1.1`, physical
 uplink `eno1`, MAC `24:4b:fe:03:c4:69`, 62 GiB RAM with 61 GiB available and
 323 GiB free on `/var/lib`'s filesystem. cp-03 uses MAC `02:6b:38:00:00:03`,
-vsock CID 1003, 2 vCPU, 2048 MiB RAM and a 64 GiB sparse persistent image.
+vsock CID 1003, 4 vCPUs, 4096 MiB RAM and a 64 GiB sparse persistent image.
 Its IP is not allocated here.
 
 1. Confirm cp-01/cp-02 remain Ready and reachable, including Cilium 2/2 and
@@ -272,3 +275,40 @@ planned for persistence acceptance. Preserve its runner and state and recheck
 all health after the restart; do not restart multiple members together.
 Even with three voters, losing meawhite removes two: this is not host-level HA.
 Encrypted off-host backup/restore verification remains explicitly deferred.
+
+## Stage the single worker
+
+`k8s-worker-02` is the only worker, enabled on meawhite with 16 GiB RAM,
+4 vCPUs, MAC `02:6b:38:00:00:05`, vsock CID 1005 and persistent `/var`.
+The previous unused worker plan on meablack has been removed; existing
+control-plane identities and all persistent volume sizes remain unchanged.
+
+First finish the staged resource rollout in
+[operations.md](operations.md#apply-mixed-capacity-and-add-the-worker).
+For the worker, obtain its first DHCP lease, reserve that observed IP, verify
+its SSH host key and check hostname, `/var` and inactive K3s with missing token.
+Do not invent its address or reuse a control-plane state image.
+
+Use the shared join procedure with the reserved worker IP and
+`TOKEN_SOURCE=/var/lib/rancher/k3s/server/agent-token`. This existing full token
+is copied over SSH into the same protected runtime file. By default the agent
+token may equal the server token; this change does not configure or rotate a
+separate secret on the servers. Do not print either token or copy it into Nix.
+
+The worker runs `k3s agent`: it does not initialize etcd, expose server/etcd
+ports or receive server-only flags. It fetches cluster network settings from
+the server, including the disabled built-in CNI/kube-proxy settings. Its guest
+firewall allows kubelet TCP 10250 and Cilium health TCP 4240/ICMP; there is no
+Flannel VXLAN port. Node-password persistence and the containerd v3 CNI
+paths apply equally to servers and this agent.
+
+After registration, verify four Ready Nodes with distinct IPs, Cilium/Envoy
+on the worker and Cilium 4/4 from every agent, metrics, DNS and cross-node
+Pod/Service traffic. Check that the worker has no control-plane/etcd role.
+Verify ordinary scheduler placement on worker-02, cp-01 and cp-03 using
+node affinity/selectors (not `nodeName`, which bypasses normal scheduling).
+cp-02 remains reserved through its NoSchedule taint. Keep application memory
+requests modest on the two mixed servers, especially cp-03 alongside Strata.
+
+References: [K3s agent](https://docs.k3s.io/cli/agent),
+[Cilium on K3s](https://docs.cilium.io/en/stable/installation/k3s/).

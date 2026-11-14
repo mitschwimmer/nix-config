@@ -163,48 +163,79 @@ member. Continue with cp-03's DHCP reservation and inactive-service checks in
 References: [NixOS configuration changes](https://nixos.org/manual/nixos/stable/#sec-changing-config),
 [systemd transient services/timers](https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html).
 
-## Reduce control-plane RAM
+## Apply mixed capacity and add the worker
 
-The declared target is 2048 MiB per server with 2 vCPUs retained. Existing
-running VMs keep their 4096 MiB allocation until their updated host-side
-runner is installed and the VM is restarted. A guest-internal reboot alone
-does not replace the Cloud Hypervisor runner/memory limit.
+The declared layout is cp-01/cp-03: 4 GiB and 4 vCPUs; cp-02: 2 GiB and
+2 vCPUs; worker-02 on meawhite: 16 GiB and 4 vCPUs. No worker is deployed
+on meablack. Existing running VMs retain their old resources until their
+updated host-side runner is installed and that VM is restarted. An internal
+guest reboot does not replace the Cloud Hypervisor resource configuration.
 
-1. From the clean reviewed checkout, run `tests/microvms.nix`, evaluate the
-   three declared runners and all four installed host variants, then build
-   the three runners plus `meawhite-secure` and `meablack-secure` toplevels.
-2. Before deploying either host, preserve the currently booted runners as GC
-   roots for cp-01/cp-02 on meawhite and cp-03 on meablack, using the existing
-   update procedure. Give them distinct `-before-2g` root names. Keep all
-   state images, tokens, MACs, names and vsock CIDs intact.
-3. Deploy the two secure hosts. Their bridge configurations are already
-   accepted; do not repeat the initial meablack bridge cutover. Existing VMs
-   retain `restartIfChanged = false`; do not restart any VM in the host
-   deployment command.
-4. Recheck three Ready Nodes, Cilium 3/3 node/endpoint health and metrics.
-   Separate etcdctl inspection was explicitly deferred by the operator;
-   these checks do not claim it was performed. Restart only cp-03 first:
+1. From the clean reviewed checkout, evaluate the MicroVM suite, all four
+   guest runners and both physical hosts including their secure variants.
+   Build all four runners and both secure host toplevels before deployment.
+2. Preserve each control-plane VM's booted runner as a distinct GC root
+   (`<guest>-before-capacity-change`) on its physical host, using the existing
+   update procedure. Keep their state images, tokens, identities and disk
+   sizes intact. Confirm worker-02 has no preexisting state image on meawhite;
+   if it does, inspect its history before booting it rather than deleting it.
+3. Deploy `meawhite-secure` and `meablack-secure`. No bridge migration is
+   required. Existing guests retain `restartIfChanged = false`; worker-02
+   may auto-start for DHCP/SSH but cannot join without its token file. During
+   this transition, meawhite's two existing 4 GiB servers plus the 16 GiB
+   worker declare 24 GiB, falling to 22 GiB when cp-02 is reduced. Do not
+   provision the worker's token or schedule new application loads yet.
+4. Check all three servers remain Ready with Cilium 3/3 and metrics. Apply
+   cp-02's scheduling taint from an existing server:
 
    ```sh
-   # On meablack, after preserving its old runner and deploying the host:
-   sudo systemctl start install-microk8s-cp-03.service
-   sudo systemctl restart microvm@k8s-cp-03
+   k3s kubectl taint nodes k8s-cp-02 \
+     node-role.kubernetes.io/control-plane=true:NoSchedule --overwrite
    ```
 
-5. Verify that cp-03 now reports roughly 2 GiB total RAM minus guest kernel
-   overhead, the same IP/SSH identity and persistent ext4 `/var`, K3s active,
-   its Node Ready, Cilium 3/3 and metrics recovered. Repeat the host-boundary
-   Pod-IP and Service-DNS tests. Observe memory during normal activity;
-   check MemAvailable, `/proc/pressure/memory`, pod restarts and kernel OOM
-   events. The sampling data at 4 GiB is not a guarantee that 2 GiB is enough.
-6. Only if cp-03 is stable, repeat individually for cp-02, then cp-01, using
-   their install/VM units on meawhite. Wait for all three nodes and Cilium
-   health to recover between each restart. cp-01 is still Cilium's fixed API
-   endpoint, so its restart can interrupt Cilium API access; the API on cp-02
-   can be used to observe the cluster during that step. No VIP is provided.
+   The Nix registration flag covers a fresh Node only; it will not modify the
+   existing Node automatically. NoSchedule does not evict existing pods.
+5. Restart only cp-02 first, on meawhite, after preserving its old runner:
 
-If a guest fails to recover, experiences OOM kills or sustained memory
-pressure, stop the rollout. Restore that guest's saved 4 GiB runner through
-the existing runner rollback procedure, retaining its state image, and adjust
-or revert the declarative RAM change. Do not restart a second etcd member
-while one is unavailable. Keep recovery GC roots until acceptance is complete.
+   ```sh
+   sudo systemctl start install-microk8s-cp-02.service
+   sudo systemctl restart microvm@k8s-cp-02
+   ```
+
+   Verify roughly 2 GiB guest RAM minus kernel overhead, stable IP/SSH and
+   node-password identity, persistent ext4 `/var`, K3s active, Node Ready,
+   recovered Cilium 3/3 and metrics. Check memory availability/pressure, OOM
+   events and pod restarts under normal activity. If unstable, restore its
+   saved 4 GiB runner with the existing rollback procedure and halt rollout.
+6. Only after complete recovery, update cp-03 on meablack and then cp-01 on
+   meawhite, separately, to their new 4-vCPU runners. They retain 4 GiB RAM.
+   Use each install/VM unit as above and fully recover health between nodes.
+   cp-01 remains Cilium's fixed API endpoint, so its restart can interrupt
+   Cilium API access; observe the cluster using cp-02's local API if needed.
+   Separate etcdctl inspection and backup verification remain deferred by
+   operator choice; do not restart more than one voting member at a time.
+7. Inspect scheduling from an existing server:
+
+   ```sh
+   k3s kubectl get nodes -o custom-columns='NAME:.metadata.name,UNSCHEDULABLE:.spec.unschedulable,TAINTS:.spec.taints'
+   ```
+
+   cp-01/cp-03 should be uncordoned and have no control-plane/master NoSchedule
+   taints. If a role taint is present, remove that specific role taint with
+   `kubectl taint`; do not remove memory-pressure/not-ready taints. The declared
+   K3s configurations do not set workload-blocking taints on these two nodes.
+   If intentionally cordoned for this maintenance, uncordon after recovery.
+8. Find worker-02's first DHCP lease by MAC `02:6b:38:00:00:05`, hostname
+   `k8s-worker-02`, and reserve the observed IP. Verify its SSH host key,
+   identity, persistent `/var` and inactive K3s with absent join token.
+9. Follow [bootstrap.md](bootstrap.md#stage-the-single-worker) to provision
+   its existing agent token and start K3s. Accept four Ready Nodes, only
+   three etcd members/roles, Cilium 4/4, metrics and workload scheduling on
+   the worker and both mixed servers. Test Pod-IP/Service-DNS traffic across
+   hosts and between the worker and servers. Cilium's existing DaemonSet
+   extends automatically; no second HelmChart/release is installed.
+
+No worker is added to meablack. Strata's 60 GB system-RAM demand still needs
+measurement/clarification before using cp-03's application capacity heavily.
+Do not treat the mixed server's entire 4 GiB as available to applications.
+Keep old runners GC-rooted until resource/persistence acceptance is complete.

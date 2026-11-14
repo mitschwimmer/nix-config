@@ -16,8 +16,8 @@ let
   check = label: condition: if condition then true else throw "MicroVM check failed: ${label}";
 in
 {
-  topology = check "five nodes, three servers, two servers on meawhite"
-    (builtins.length (builtins.attrNames nodes) == 5
+  topology = check "four nodes, three servers, sole worker on meawhite"
+    (builtins.length (builtins.attrNames nodes) == 4
       && builtins.length (lib.filter (n: n.role == "server") (builtins.attrValues nodes)) == 3
       && builtins.length (lib.filter (n: n.role == "server" && n.host == "meawhite") (builtins.attrValues nodes)) == 2);
   identity = check "unique stable MACs, vsock CIDs and valid TAP names"
@@ -26,7 +26,7 @@ in
       && lib.all (n: n.vsockCid >= 3) (builtins.attrValues nodes)
       && lib.all (name: guests.${name}.microvm.vsock.cid == nodes.${name}.vsockCid) (builtins.attrNames nodes)
       && lib.all (name: builtins.stringLength (builtins.head guests.${name}.microvm.interfaces).id <= 15) (builtins.attrNames nodes));
-  # All five guests remain buildable; host activation is a separate decision.
+  # All four guests remain buildable; joining is gated by runtime credentials.
   guests = lib.mapAttrs (name: c: check "${name}: raw persistent state, full kernel and no NAT"
     (c.networking.hostName == name
       && c.networking.firewall.enable
@@ -57,8 +57,7 @@ in
         6443 9345 2379 2380 10250
       ]
       && lib.elem "L+ /etc/rancher/node - - - - /var/lib/rancher/node" c.systemd.tmpfiles.rules
-      && lib.all (name: !guests.${name}.services.k3s.enable)
-        (lib.filter (name: !(lib.elem name [ "k8s-cp-01" "k8s-cp-02" "k8s-cp-03" ])) (builtins.attrNames nodes)));
+);
   k3sJoin = lib.genAttrs [ "k8s-cp-02" "k8s-cp-03" ] (name:
     check "${name}: joins existing etcd using only a protected runtime token file"
     (let
@@ -73,7 +72,8 @@ in
       && c.services.k3s.tokenFile == "/var/lib/rancher/k3s/join-token"
       && c.systemd.services.k3s.unitConfig.ConditionPathExists == c.services.k3s.tokenFile
       && lib.hasInfix "0:0:600" c.systemd.services.k3s.preStart
-      && c.services.k3s.extraFlags == first.services.k3s.extraFlags
+      && lib.filter (flag: !(lib.hasPrefix "--node-taint=" flag)) c.services.k3s.extraFlags
+        == first.services.k3s.extraFlags
       && c.services.k3s.disable == first.services.k3s.disable
       && lib.elem "L+ /etc/rancher/node - - - - /var/lib/rancher/node" c.systemd.tmpfiles.rules
       && lib.elem "systemd-tmpfiles-setup.service" c.systemd.services.k3s.requires
@@ -84,6 +84,31 @@ in
           && c.networking.firewall.allowPing
           && !(lib.elem 8472 c.networking.firewall.allowedUDPPorts)
       ) [ "k8s-cp-01" "k8s-cp-02" "k8s-cp-03" ]));
+  k3sWorker = check "sole worker joins as an agent without server ports or flags"
+    (let c = guests."k8s-worker-02"; in
+      c.services.k3s.enable
+      && c.services.k3s.role == "agent"
+      && !c.services.k3s.clusterInit
+      && c.services.k3s.serverAddr == "https://192.168.1.103:6443"
+      && c.services.k3s.token == ""
+      && c.services.k3s.tokenFile == "/var/lib/rancher/k3s/join-token"
+      && c.systemd.services.k3s.unitConfig.ConditionPathExists == c.services.k3s.tokenFile
+      && lib.hasInfix "0:0:600" c.systemd.services.k3s.preStart
+      && c.services.k3s.extraFlags == [ ]
+      && c.services.k3s.disable == [ ]
+      && lib.all (port: !(lib.elem port c.networking.firewall.allowedTCPPorts)) [ 6443 9345 2379 2380 ]
+      && lib.all (port: lib.elem port c.networking.firewall.allowedTCPPorts) [ 10250 4240 ]
+      && c.networking.firewall.allowPing
+      && !(lib.elem 8472 c.networking.firewall.allowedUDPPorts)
+      && lib.elem "L+ /etc/rancher/node - - - - /var/lib/rancher/node" c.systemd.tmpfiles.rules);
+  workloadScheduling = check "cp-01/cp-03 run agents without registration taints; cp-02 is reserved"
+    (lib.all (name:
+      let c = guests.${name}; in
+        !c.services.k3s.disableAgent
+        && !(lib.any (lib.hasPrefix "--node-taint=") c.services.k3s.extraFlags)
+    ) [ "k8s-cp-01" "k8s-cp-03" ]
+      && lib.elem "--node-taint=node-role.kubernetes.io/control-plane=true:NoSchedule"
+        guests."k8s-cp-02".services.k3s.extraFlags);
   containerdCni = check "containerd v3 imports persistent Cilium paths"
     (let
       dropin = builtins.readFile ../kubernetes/containerd-cni.toml;
@@ -94,7 +119,7 @@ in
           && lib.any (lib.hasPrefix
             "L+ /var/lib/rancher/k3s/agent/etc/containerd/config-v3.toml.d/10-cni.toml - - - - "
           ) rules
-      ) [ "k8s-cp-01" "k8s-cp-02" "k8s-cp-03" ]
+      ) (builtins.attrNames nodes)
       && lib.all (fragment: lib.hasInfix fragment dropin) [
         "[plugins.'io.containerd.cri.v1.runtime'.cni]"
         "bin_dirs = [\"/var/lib/rancher/k3s/data/cni\"]"
@@ -127,11 +152,11 @@ in
       && lib.all (name: !(guests.${name}.services.k3s.manifests ? cilium))
         (lib.filter (name: name != "k8s-cp-01") (builtins.attrNames nodes)));
   hosts = lib.mapAttrs (name: c: check "${name}: opt-in guests without mass restarts"
-    (builtins.length (builtins.attrNames c.microvm.vms) == (if name == "meawhite" then 3 else 2)
+    (builtins.length (builtins.attrNames c.microvm.vms) == (if name == "meawhite" then 3 else 1)
       && lib.all (vm: !vm.restartIfChanged) (builtins.attrValues c.microvm.vms)
       && configs.${name}.config.services.kubernetesMicrovms.enable
       && configs.${name}.config.services.kubernetesMicrovms.guests
-        == (if name == "meawhite" then [ "k8s-cp-01" "k8s-cp-02" ] else [ "k8s-cp-03" ])
+        == (if name == "meawhite" then [ "k8s-cp-01" "k8s-cp-02" "k8s-worker-02" ] else [ "k8s-cp-03" ])
       && !(configs.${name}.config.virtualisation.libvirtd.enable)
       && lib.all (vm:
         let unit = c.systemd.services."microvm-tap-interfaces@${vm}";
@@ -149,7 +174,13 @@ in
       && c.networking.interfaces.br0.macAddress == "24:4b:fe:03:c4:69"
       && builtins.attrNames c.microvm.vms == [ "k8s-cp-03" ]
       && !c.microvm.vms."k8s-cp-03".restartIfChanged);
+  resources = check "requested mixed control-plane and single-worker capacity"
+    (guests."k8s-cp-01".microvm.mem == 4096 && guests."k8s-cp-01".microvm.vcpu == 4
+      && guests."k8s-cp-02".microvm.mem == 2048 && guests."k8s-cp-02".microvm.vcpu == 2
+      && guests."k8s-cp-03".microvm.mem == 4096 && guests."k8s-cp-03".microvm.vcpu == 4
+      && guests."k8s-worker-02".microvm.mem == 16384
+      && builtins.length (lib.filter (n: n.role == "agent") (builtins.attrValues nodes)) == 1);
   # Force full module evaluation, including assertion and service generation,
-  # for both host fixtures, including the still-disabled workers.
+  # for both enabled physical hosts.
   enabledHostDerivations = lib.mapAttrs (_: c: c.system.build.toplevel.drvPath) hosts;
 }
