@@ -102,5 +102,7 @@ Two of three etcd servers run on meawhite: loss of meawhite
 will lose quorum. The cluster is not symmetric host-HA. The Cilium bootstrap
 must converge before expecting Kubernetes nodes to become Ready.
 
+GitOps bootstrap and ownership: [gitops.md](gitops.md).
+
 Deployment: [bootstrap.md](bootstrap.md). Operations: [operations.md](operations.md).
 Recovery: [recovery.md](recovery.md).

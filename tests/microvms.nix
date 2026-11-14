@@ -151,6 +151,19 @@ in
       ]
       && lib.all (name: !(guests.${name}.services.k3s.manifests ? cilium))
         (lib.filter (name: name != "k8s-cp-01") (builtins.attrNames nodes)));
+  argocdBootstrap = check "only cp-01 owns the pinned post-network Argo CD bootstrap"
+    (let chart = guests."k8s-cp-01".services.k3s.manifests.argocd.content; in
+      chart.kind == "HelmChart"
+      && chart.metadata.namespace == "kube-system"
+      && chart.spec.chart == "argo-cd"
+      && chart.spec.repo == "https://argoproj.github.io/argo-helm"
+      && chart.spec.version == "10.18.0"
+      && chart.spec.targetNamespace == "argocd"
+      && chart.spec.createNamespace
+      && !chart.spec.bootstrap
+      && chart.spec.failurePolicy == "abort"
+      && lib.all (name: !(guests.${name}.services.k3s.manifests ? argocd))
+        (lib.filter (name: name != "k8s-cp-01") (builtins.attrNames nodes)));
   hosts = lib.mapAttrs (name: c: check "${name}: opt-in guests without mass restarts"
     (builtins.length (builtins.attrNames c.microvm.vms) == (if name == "meawhite" then 3 else 1)
       && lib.all (vm: !vm.restartIfChanged) (builtins.attrValues c.microvm.vms)
