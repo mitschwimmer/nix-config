@@ -4,16 +4,20 @@ Four NixOS 26.05 guests are defined for Cloud Hypervisor on the two Secure Boot 
 All three control-plane guests are enabled in the host configurations:
 cp-01/cp-02 on meawhite and cp-03 on meablack. Only cp-01 initializes embedded
 etcd. Fresh joiners boot for DHCP/SSH; K3s waits for their runtime token file.
-The sole worker, `k8s-worker-02`, is enabled on meawhite for DHCP/SSH and
-waits for its runtime token before joining. Keepalived and OpenEBS remain disabled.
+The sole worker, `k8s-worker-02`, is enabled and joined on meawhite. Fresh
+replacement joiners still wait for a runtime credential before joining. Keepalived and OpenEBS remain disabled.
 
-On 2026-11-14 the operator confirmed all three control-plane nodes Ready
-with reserved addresses cp-01 `192.168.1.103`, cp-02 `192.168.1.104` and
-cp-03 `192.168.1.105`. Cilium converged to fully green 3/3 node/endpoint
-health from every agent, metrics worked on all nodes, and bidirectional
-Pod-IP/Service-DNS HTTP tests passed across the physical-host boundary.
-Separate etcdctl inspection was deferred by operator choice. Guest restart
-persistence and acceptance of the revised VM resources are still pending.
+On 2026-11-14 the operator reported the resource rollout complete: cp-02
+restarted at 2 GiB/2 vCPUs, cp-03 and cp-01 at 4 GiB/4 vCPUs, with all three
+Nodes Ready, metrics working and Cilium fully green after probe convergence.
+Worker-02 then joined as an agent; the operator confirmed
+the expected four-node Ready/pod/metrics checks. Ordinary scheduler placement
+using hostname node selectors succeeded on cp-01, cp-03 and worker-02, and
+all six directed pairs passed both Pod-IP and Service-DNS HTTP tests. The
+temporary test namespace was removed by the successful test procedure.
+Separate etcdctl inspection was deferred by operator choice. An explicit
+four-agent cilium-health capture, worker restart and physical-host reboot
+acceptance have not been supplied; do not infer those tests from the above.
 Cilium 1.20.4 remains owned by cp-01's HelmChart. Its API endpoint stays
 `192.168.1.103:6443`; no VIP is implemented.
 
@@ -44,8 +48,9 @@ Before resizing, VM-wide used memory (MemTotal minus MemAvailable) was
 1193/988/999 MiB on cp-01/cp-02/cp-03 at 4 GiB each. K3s cgroup anonymous
 memory was about 516/383/384 MiB and file-backed memory 501/1685/1680 MiB.
 Cgroup totals include cache and overlap with VM-wide measurements. Samples
-do not bound startup, upgrade or future workload demand. Validate cp-02 at
-2 GiB with normal activity and retain its previous runner for rollback.
+do not bound startup, upgrade or future workload demand. The initial cp-02
+checks at 2 GiB passed; continue observing normal activity and retain its
+previous runner for rollback until longer-term stability is established.
 
 | Host | Linux-usable RAM | Declared VM RAM | Remaining for host/overhead/reserve |
 | --- | --- | --- | --- |
@@ -93,7 +98,7 @@ rotation is not part of this rollout.
 With three healthy voters, quorum is two and one member may be unavailable
 at a time. Check health before maintenance and fully recover each member
 before touching another.
-Two of three etcd servers are planned for meawhite: loss of meawhite
+Two of three etcd servers run on meawhite: loss of meawhite
 will lose quorum. The cluster is not symmetric host-HA. The Cilium bootstrap
 must converge before expecting Kubernetes nodes to become Ready.
 
