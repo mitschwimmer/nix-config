@@ -1,15 +1,24 @@
-{ config, lib, pkgs, name, node, ... }:
+{ lib, pkgs, name, node, ... }:
 
 let
-  # Run on the guest host stack, independently of Kubernetes/Cilium.
+  # K3s otherwise disables anonymous auth. Allow it only for the apiserver
+  # readiness endpoint; no credentials or ordinary API access are exposed.
+  apiAuthentication = pkgs.writeText "k3s-api-readiness-authentication.yaml" ''
+    apiVersion: apiserver.config.k8s.io/v1
+    kind: AuthenticationConfiguration
+    anonymous:
+      enabled: true
+      conditions:
+        - path: /readyz
+  '';
   apiReady = pkgs.writeShellScript "check-k3s-api-ready" ''
     set -eu
-    # K3s denies anonymous /readyz requests (HTTP 401). Use its runtime
-    # admin kubeconfig without copying credentials into the Nix store.
-    response="$("${config.services.k3s.package}/bin/k3s" kubectl \
-      --kubeconfig=/etc/rancher/k3s/k3s.yaml \
-      --server=https://127.0.0.1:6443 \
-      --request-timeout=2s get --raw=/readyz 2>/dev/null)" || exit 1
+    # Native kube-apiserver is loopback-only on 6444. K3s's supervisor on
+    # 6443 rejects anonymous /readyz checks; use the native listener here.
+    # --insecure is only for this local probe, never API client traffic.
+    response="$("${lib.getExe pkgs.curl}" --silent --show-error --fail \
+      --insecure --connect-timeout 1 --max-time 2 \
+      https://127.0.0.1:6444/readyz)" || exit 1
     test "$response" = ok
   '';
   priority =
@@ -20,6 +29,9 @@ in
 lib.mkIf (node.role == "server") {
   # Also make the readiness probe easy to run by hand during failover tests.
   environment.systemPackages = [ pkgs.curl ];
+  services.k3s.extraFlags = lib.mkAfter [
+    "--kube-apiserver-arg=authentication-config=${apiAuthentication}"
+  ];
   services.keepalived = {
     enable = true;
     enableScriptSecurity = true;
