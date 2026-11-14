@@ -280,6 +280,9 @@ Encrypted off-host backup/restore verification remains explicitly deferred.
 
 `k8s-worker-02` is the only worker, enabled on meawhite with 16 GiB RAM,
 4 vCPUs, MAC `02:6b:38:00:00:05`, vsock CID 1005 and persistent `/var`.
+The operator reserved its DHCP lease and confirmed its join and workload
+connectivity on 2026-11-14. The following is a provisioning runbook; do not
+rerun token delivery against this already joined node.
 The previous unused worker plan on meablack has been removed; existing
 control-plane identities and all persistent volume sizes remain unchanged.
 

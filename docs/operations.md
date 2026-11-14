@@ -36,7 +36,7 @@ From the workstation, deploy `meawhite-secure` as in
 [bootstrap.md](bootstrap.md). Then on meawhite:
 
 ```sh
-sudo systemctl start install-microk8s-cp-01.service
+sudo systemctl start install-microvm-k8s-cp-01.service
 sudo systemctl restart microvm@k8s-cp-01
 ```
 
@@ -198,7 +198,7 @@ guest reboot does not replace the Cloud Hypervisor resource configuration.
 5. Restart only cp-02 first, on meawhite, after preserving its old runner:
 
    ```sh
-   sudo systemctl start install-microk8s-cp-02.service
+   sudo systemctl start install-microvm-k8s-cp-02.service
    sudo systemctl restart microvm@k8s-cp-02
    ```
 
