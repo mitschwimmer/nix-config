@@ -20,7 +20,8 @@
         timeout = "10m";
         valuesContent = ''
           kubeProxyReplacement: true
-          k8sServiceHost: 192.168.1.103
+          # Host-level Keepalived must be proven before this bootstrap switch.
+          k8sServiceHost: 192.168.1.110
           k8sServicePort: 6443
           routingMode: native
           autoDirectNodeRoutes: true

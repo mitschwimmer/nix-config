@@ -12,8 +12,9 @@ in
     enable = true;
     role = node.role;
     clusterInit = bootstrapServer;
-    # Keep joiners on cp-01 until the independent VIP passes failover tests.
-    serverAddr = lib.mkIf joiningNode "https://192.168.1.103:6443";
+    # Change only after Keepalived is live and its TLS/failover is tested.
+    # cp-01's direct IP remains available for out-of-band recovery.
+    serverAddr = lib.mkIf joiningNode "https://192.168.1.110:6443";
     tokenFile = lib.mkIf joiningNode joinTokenFile;
 
     disable = lib.optionals server [ "traefik" "servicelb" "local-storage" ];
