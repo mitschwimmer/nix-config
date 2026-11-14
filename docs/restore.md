@@ -33,12 +33,15 @@ guest inventory. Each guest has a separate sparse 64 GiB ext4 `/var` state image
 
 - Physical-host LAN addresses: `meawhite` `192.168.1.137` and `meablack`
   `192.168.1.28`. The guests use bridged DHCP.
-- **Reserve `192.168.1.103` for cp-01** (MAC above) before its first boot.
-  `kubernetes/k3s.nix` and `kubernetes/cilium.nix` still use that API address
-  for initial bootstrap. Keepalived also declares reserved API VIP
-  `192.168.1.110/32` on the three server guests; no clients depend on it
-  until the separate cutover. Verify LAN VRRP ID 110 and multicast reachability
-  before activating Keepalived; see [operations.md](operations.md).
+- **Reserve `192.168.1.103` for cp-01** (MAC above) before its first boot,
+  for direct recovery access. Keepalived declares the reserved API VIP
+  `192.168.1.110/32` on all three server guests, and K3s joiners/Cilium
+  now use this address. Verify VRRP ID 110 is unused and multicast crosses
+  both host bridges before activation. On a fresh install, cp-01's local
+  K3s `/readyz` must pass so Keepalived can hold the VIP **before** the
+  cp-01-owned Cilium bootstrap contacts it. If this fails, use
+  [operations.md](operations.md) and local cp-01 recovery; do not silently
+  change the installation sequence or add a second Cilium owner.
 - K3s uses three embedded-etcd servers; losing `meawhite` loses two voters.
   Cilium 1.20.4 and Argo CD chart 10.18.0 are bootstrapped by *cp-01's
   K3s Helm Controller*, not by GitOps.
@@ -62,10 +65,11 @@ and the code disagree.
 2. Check out the intended current `main` of **both repositories**, including
    `nix-config/flake.lock`. This runbook intentionally does not pin an
    historical Git commit or require restoring the old cluster's token.
-3. Reestablish LAN routing, the physical-host DHCP reservations and cp-01's
-   `192.168.1.103` reservation. Record the *observed* DHCP leases for cp-02,
-   cp-03 and worker-02 by MAC. Verify the interface names and hardware IDs
-   in the host configurations against replacement hardware.
+3. Reestablish LAN routing, the physical-host DHCP reservations, cp-01's
+   `192.168.1.103` reservation and the **non-DHCP** `192.168.1.110` VIP
+   reservation. Record *observed* DHCP leases for cp-02, cp-03 and worker-02
+   by MAC. Verify VRRP multicast across both host bridges, VRID 110
+   uniqueness, interface names and hardware IDs before deploying K3s.
 4. Decide explicitly whether the original disks or MicroVM `state.img` files
    contain anything to salvage. **Stop here** if they do. A clean deployment
    uses fresh state images; it must never accidentally boot an old guest that
@@ -135,9 +139,13 @@ new K3s server token, initializes embedded etcd and installs its two K3s
 HelmCharts. The other guests may boot for DHCP/SSH but K3s is intentionally
 inactive until each receives its new join token.
 
-Verify cp-01 receives `192.168.1.103` and has a persistent `/var`. Verify the
-new SSH host fingerprint via a trusted channel before accepting it; regenerated
-host keys are expected. Then check:
+Verify cp-01 receives `192.168.1.103`, has a persistent `/var`, and that
+Keepalived takes `192.168.1.110/32` after the local K3s API passes `/readyz`.
+Confirm the VIP is reachable from a trusted LAN machine before the Cilium
+HelmChart relies on it. If the API never becomes ready or the VIP is absent,
+do **not** switch Cilium ownership: diagnose Keepalived/K3s from the direct
+cp-01 IP and console. Verify the new SSH host fingerprint via a trusted
+channel before accepting it; regenerated host keys are expected. Then check:
 
 ```sh
 ssh root@192.168.1.103 'findmnt /var; systemctl status k3s --no-pager'

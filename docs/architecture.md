@@ -23,14 +23,14 @@ recreated; for ordinary operations never delete them.
 
 The hosts bridge guest TAP interfaces to `br0`. `meawhite` retains
 `192.168.1.137` and `meablack` `192.168.1.28`; guests use DHCP. cp-01's
-MAC `02:6b:38:00:00:01` must be reserved at `192.168.1.103` because K3s
-and Cilium currently use that API endpoint directly. Keepalived is now
-declared for each control-plane guest, with reserved VIP `192.168.1.110/32`
-on `lan0`, VRRP ID 110, and a local API `/readyz` fault check. All
-servers declare a matching K3s `--tls-san`. The clients still use cp-01
-until a **separate, tested cutover**. A Nix declaration is not evidence of
-live deployment or successful VIP failover. The retired candidate worker
-identity with MAC suffix 04/CID 1004 is not reused.
+MAC `02:6b:38:00:00:01` is reserved at `192.168.1.103` for direct
+emergency access. Normal K3s joiners and Cilium now target
+`192.168.1.110:6443`, the independent Keepalived VIP on guest `lan0`
+(`/32`, multicast VRRP ID 110). A local HTTPS `/readyz` gate prevents
+an unready API from owning the VIP, and all servers declare its
+`--tls-san`. **Do not deploy this client cutover until stage-one VIP
+failover and TLS are verified on the live LAN.** The retired candidate
+worker identity with MAC suffix 04/CID 1004 is not reused.
 
 ## Ownership and availability
 

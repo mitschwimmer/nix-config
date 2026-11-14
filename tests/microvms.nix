@@ -68,7 +68,7 @@ in
       c.services.k3s.enable
       && c.services.k3s.role == "server"
       && !c.services.k3s.clusterInit
-      && c.services.k3s.serverAddr == "https://192.168.1.103:6443"
+      && c.services.k3s.serverAddr == "https://192.168.1.110:6443"
       && c.services.k3s.token == ""
       && c.services.k3s.tokenFile == "/var/lib/rancher/k3s/join-token"
       && c.systemd.services.k3s.unitConfig.ConditionPathExists == c.services.k3s.tokenFile
@@ -90,7 +90,7 @@ in
       c.services.k3s.enable
       && c.services.k3s.role == "agent"
       && !c.services.k3s.clusterInit
-      && c.services.k3s.serverAddr == "https://192.168.1.103:6443"
+      && c.services.k3s.serverAddr == "https://192.168.1.110:6443"
       && c.services.k3s.token == ""
       && c.services.k3s.tokenFile == "/var/lib/rancher/k3s/join-token"
       && c.systemd.services.k3s.unitConfig.ConditionPathExists == c.services.k3s.tokenFile
@@ -171,7 +171,7 @@ in
       && chart.spec.failurePolicy == "abort"
       && lib.all (text: lib.hasInfix text values) [
         "kubeProxyReplacement: true"
-        "k8sServiceHost: 192.168.1.103"
+        "k8sServiceHost: 192.168.1.110"
         "routingMode: native"
         "autoDirectNodeRoutes: true"
         "ipv4NativeRoutingCIDR: 10.42.0.0/16"

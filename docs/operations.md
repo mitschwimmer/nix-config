@@ -156,3 +156,43 @@ HelmChart's `k8sServiceHost` to `192.168.1.110`. Never uninstall that
 HelmChart. Restart one node at a time and test both Cilium reconnecting
 during a cp-01 API outage and access via individual control-plane IPs.
 The VIP does **not** fix etcd quorum loss if meawhite fails.
+
+## Client cutover to the verified VIP
+
+**Prerequisite:** The first-stage Keepalived runbook above has passed on
+the live cluster. Confirm exactly one VIP owner, no multicast split brain,
+a valid TLS SAN for `192.168.1.110`, an authenticated kubeconfig over the
+VIP, three healthy etcd voters, and a successful VRRP leader failover.
+Do not deploy this branch directly from an old cluster without stage one.
+
+The follow-up Nix change replaces **only** the joining server/worker
+`services.k3s.serverAddr` and the *existing cp-01-owned* Cilium HelmChart's
+`k8sServiceHost` with `192.168.1.110`. The cp-01 bootstrap remains
+`clusterInit` without a server address, and the Cilium release is still
+owned by K3s on cp-01. Keep direct per-server IPs for recovery.
+
+1. Evaluate/build on a Nix-enabled workstation and preserve previously
+   booted guest runners before deployment. Verify the VIP and quorum again.
+2. Roll K3s joiners **cp-02 then cp-03, then worker-02**, individually.
+   After each restart, test Kubernetes Node readiness, etcd membership (for
+   servers), and Cilium/metrics. Keep cp-01's HelmChart on the old endpoint
+   until the other nodes are healthy.
+3. Finally update cp-01, whose HelmChart now configures Cilium to use the
+   VIP. Inspect K3s Helm Controller jobs and the existing Cilium DaemonSet,
+   and wait for all agents to reconnect. Do **not** delete the HelmChart or
+   uninstall the release. Confirm the rendered Cilium values use the VIP.
+4. Test a CA-verified `kubectl` via the VIP. While other etcd voters are
+   healthy, test a cp-01 outage and verify the VIP, API access and Cilium
+   recover through a surviving control plane. Restore cp-01 and fully
+   recheck quorum; never fail a second voter during the same test.
+5. For recovery, use an individual server's real IP directly. A failed
+   cutover requires reverting the client settings to `192.168.1.103`
+   through the previous reviewed Nix closures, not deleting Helm releases,
+   guest state, etcd members, or Cilium CNI resources.
+
+Cold-start/fresh-rebuild validation is also required: when cp-01 first
+initializes embedded etcd, its local `/readyz` must become healthy and
+Keepalived must claim the VIP **before** Cilium tries to use it. If that
+ordering does not hold, the cutover is not acceptable for reproducible
+cluster recovery. Keepalived cannot fix the loss of etcd quorum if
+meawhite fails.
