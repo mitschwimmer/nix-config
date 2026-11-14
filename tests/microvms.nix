@@ -134,7 +134,7 @@ in
       && lib.all (vm: !vm.restartIfChanged) (builtins.attrValues c.microvm.vms)
       && configs.${name}.config.services.kubernetesMicrovms.enable == (name == "meawhite")
       && configs.${name}.config.services.kubernetesMicrovms.guests
-        == lib.optional (name == "meawhite") "k8s-cp-01"
+        == lib.optionals (name == "meawhite") [ "k8s-cp-01" "k8s-cp-02" ]
       && !(configs.${name}.config.virtualisation.libvirtd.enable)
       && lib.all (vm:
         let unit = c.systemd.services."microvm-tap-interfaces@${vm}";

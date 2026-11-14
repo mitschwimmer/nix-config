@@ -1,9 +1,12 @@
 # Kubernetes MicroVMs
 
 Five NixOS 26.05 guests run under Cloud Hypervisor on the two Secure Boot hosts.
-Only `k8s-cp-01` is enabled, on meawhite; it initializes K3s embedded etcd.
-cp-02 has a join configuration but is not enabled on the host.
-The other four guests, Keepalived and OpenEBS are not deployed.
+`k8s-cp-01` and `k8s-cp-02` are enabled in the meawhite host configuration.
+cp-01 initializes K3s embedded etcd. A fresh cp-02 boots for DHCP/SSH only;
+its K3s service waits for the runtime join-token file. Obtain its first DHCP
+lease, reserve the observed address, then provision the token to join.
+This describes configured activation; cp-02 runtime acceptance is still pending.
+The other three guests, Keepalived and OpenEBS are not deployed.
 Cilium 1.20.4 is declared via the K3s HelmChart bootstrap resource; runtime
 acceptance on cp-01 was reported on 2026-11-13; two-node acceptance is pending.
 Pin the DHCP address 192.168.1.103 until an API VIP
@@ -20,7 +23,9 @@ replaces it in the Cilium configuration.
 MAC prefix: `02:6b:38:00:00:`. Each guest has a 64 GiB sparse raw ext4
 `/var` image under `/var/lib/microvms/<guest>/`; its root and Nix store
 are rebuilt from Nix. Preserve the state image, hostname, MAC and vsock CID.
-All guests use DHCP on a bridged TAP; reserve their leases before activation.
+All guests use DHCP on a bridged TAP. A new guest may boot without a
+reservation to obtain its first lease. Reserve the observed address before
+provisioning its K3s join credential; never guess a free LAN address.
 
 meawhite already bridges `enp129s0` through `br0` (host `192.168.1.137`).
 Before enabling MicroVMs on meablack (`192.168.1.28`), discover its wired
