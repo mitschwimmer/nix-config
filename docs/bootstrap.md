@@ -1,9 +1,11 @@
 # Bootstrap k8s-cp-01
 
-Both physical hosts use Secure Boot. meawhite enables cp-01 and cp-02;
-cp-01 initializes the cluster, while a fresh cp-02 boots without K3s until
-its join token is provisioned. Follow the cp-02 staging procedure below to
-obtain its first DHCP lease before reserving the address and joining.
+Both physical hosts use Secure Boot. meawhite enables cp-01/cp-02 and
+meablack enables cp-03. Only cp-01 initializes the cluster; fresh joiners
+boot without K3s until their runtime token is provisioned. Obtain each first
+DHCP lease before reserving its address and joining. For cp-03, first perform
+the meablack bridge cutover below; do not apply cp-01's historical bootstrap
+restart instructions to the running cluster.
 
 ## Prerequisites
 
@@ -49,8 +51,7 @@ restart persistence. Encrypted off-host backup of the token and etcd recovery
 material is deferred for this staging expansion by operator decision
 (2026-11-14); recovery has not been verified. Do not print or commit tokens.
 
-For meablack, first discover the real uplink/MAC in `meablack/microvms.nix`.
-Moving DHCP to the bridge can disconnect SSH: use console/timed rollback.
+For meablack, use the verified uplink/MAC and timed bridge cutover below.
 
 ## Cilium bootstrap
 
@@ -95,7 +96,7 @@ ssh root@192.168.1.103 'k3s kubectl get nodes; k3s kubectl get pods -A'
 
 This is an activation procedure after PR review, successful evaluation/builds
 and an explicit deployment decision. Merging does not deploy the host.
-`meawhite/microvms.nix` now lists cp-01 and cp-02; other guests stay disabled.
+`meawhite/microvms.nix` lists cp-01 and cp-02; workers stay disabled.
 A DHCP reservation is not required to boot a fresh cp-02 for its first lease.
 
 1. Recheck cp-01's node/pod health and retain its observed address
@@ -146,52 +147,57 @@ no VXLAN/8472 allowance is added. cp-01's running older runner does not pick
 up the new 4240 rule through a host rebuild. Follow the live firewall step in
 [operations.md](operations.md) before expecting two-node health.
 
-## Provision cp-02's token and join
+## Provision a joiner's token and join
 
-Run on a trusted workstation in **Bash**, with shell tracing disabled.
-Use the observed/reserved cp-02 IP. Verify both SSH host keys first; the
-commands require existing known-host entries and never bypass verification.
-Do not run under a terminal recorder that captures pipeline data.
+Use this for a fresh cp-02 or cp-03 only after its DHCP lease is reserved,
+SSH host key is independently verified, persistent `/var` is checked, and
+K3s is inactive because the token file is absent. For cp-03, finish and confirm
+the bridge cutover first. Keep both existing etcd members running.
+
+Run on a trusted workstation. Replace `JOIN_IP` with the observed reserved
+joiner address. This explicit Bash block disables tracing and prevents SSH
+from consuming the remaining script through standard input (`-n`); SCP also
+gets a closed standard input. No plaintext workstation file is created.
 
 ```sh
-set +x
+bash <<'BASH'
 set -euo pipefail
-CP02_IP="REPLACE_WITH_OBSERVED_CP02_IP"
+set +x
+JOIN_IP="REPLACE_WITH_RESERVED_JOINER_IP"
+trap 'echo "Abbruch bei Zeile $LINENO" >&2' ERR
 
-# Refuse to overwrite a token or provision an already initialized server.
-ssh -o StrictHostKeyChecking=yes root@"$CP02_IP" \
-  'test ! -e /var/lib/rancher/k3s/join-token && test ! -e /var/lib/rancher/k3s/server/db/etcd'
+# Fail rather than overwrite credentials or reuse an initialized etcd node.
+ssh -n -o StrictHostKeyChecking=yes root@"$JOIN_IP" '
+  set -eu
+  test ! -e /var/lib/rancher/k3s/join-token
+  test ! -e /var/lib/rancher/k3s/join-token.pending
+  test ! -e /var/lib/rancher/k3s/server/db/etcd
+  install -d -m 0700 -o root -g root /var/lib/rancher/k3s
+'
 
-# Stream the existing full token through SSH; no plaintext workstation file.
-# Publish atomically only after the source SSH command succeeds.
-ssh -o StrictHostKeyChecking=yes root@192.168.1.103 \
-  'test -s /var/lib/rancher/k3s/server/token && cat /var/lib/rancher/k3s/server/token' \
-  | ssh -o StrictHostKeyChecking=yes root@"$CP02_IP" \
-    'set -eu; umask 077
-     install -d -m 0700 -o root -g root /var/lib/rancher/k3s
-     test ! -e /var/lib/rancher/k3s/join-token
-     tmp=$(mktemp /var/lib/rancher/k3s/.join-token.XXXXXX)
-     trap "rm -f \"\$tmp\"" EXIT
-     cat > "$tmp"
-     test -s "$tmp"
-     chown root:root "$tmp"
-     chmod 0600 "$tmp"
-     mv -T "$tmp" /var/lib/rancher/k3s/join-token.pending'
+# Both remote endpoints authenticate through the workstation, without agent forwarding.
+scp -3 -o StrictHostKeyChecking=yes \
+  root@192.168.1.103:/var/lib/rancher/k3s/server/token \
+  root@"$JOIN_IP":/var/lib/rancher/k3s/join-token.pending </dev/null
 
-# Reached only when BOTH SSH commands succeeded (pipefail).
-ssh -o StrictHostKeyChecking=yes root@"$CP02_IP" \
-  'set -eu
-   test ! -e /var/lib/rancher/k3s/join-token
-   mv -T /var/lib/rancher/k3s/join-token.pending /var/lib/rancher/k3s/join-token
-   systemctl reset-failed k3s
-   systemctl start k3s'
+ssh -n -o StrictHostKeyChecking=yes root@"$JOIN_IP" '
+  set -eu
+  test -s /var/lib/rancher/k3s/join-token.pending
+  chown root:root /var/lib/rancher/k3s/join-token.pending
+  chmod 0600 /var/lib/rancher/k3s/join-token.pending
+  mv -T /var/lib/rancher/k3s/join-token.pending /var/lib/rancher/k3s/join-token
+  systemctl reset-failed k3s
+  systemctl start k3s
+'
+echo "K3s-Start abgeschlossen"
+BASH
 ```
 
-If transfer fails, do not publish `.pending` or start K3s. Remove the pending
-file on cp-02 and retry after investigating. The token persists on `/var`;
-no SOPS setup or second guest rebuild is required. Keep it out of Git, the
-Nix store, command arguments, chat and logs. Use the full token including its
-CA hash so the joiner authenticates the existing cluster before sending credentials.
+If transfer fails, do not publish `.pending` or start K3s. Inspect the failure
+and remove only the incomplete pending file before retrying. The token stays
+on persistent `/var`; no SOPS setup or second guest rebuild is required.
+Keep it out of Git, the Nix store, command arguments, chat and logs. Copy the
+full existing token including its CA hash; do not generate a new server token.
 
 ## Accept the second member
 
@@ -212,3 +218,57 @@ Do not delete state to retry a partial join. Use [recovery.md](recovery.md).
 References: [K3s joining servers](https://docs.k3s.io/datastore/ha-embedded),
 [token security](https://docs.k3s.io/cli/token),
 [Cilium ports](https://docs.cilium.io/en/stable/operations/system_requirements/).
+
+## Stage cp-03 on meablack
+
+Observed on 2026-11-14: host `192.168.1.28/24`, gateway `192.168.1.1`, physical
+uplink `eno1`, MAC `24:4b:fe:03:c4:69`, 62 GiB RAM with 61 GiB available and
+323 GiB free on `/var/lib`'s filesystem. cp-03 uses MAC `02:6b:38:00:00:03`,
+vsock CID 1003, 2 vCPU, 4096 MiB RAM and a 64 GiB sparse persistent image.
+Its IP is not allocated here.
+
+1. Confirm cp-01/cp-02 remain Ready and reachable, including Cilium 2/2 and
+   metrics. Do not deploy/restart meawhite or either existing guest for this step.
+2. On meablack, confirm there is no preexisting
+   `/var/lib/microvms/k8s-cp-03/state.img`; stop and inspect history if it exists.
+   Do not delete or clone an etcd state image. Retain host recovery access.
+3. Evaluate the MicroVM suite and the `meablack`/`meablack-secure` toplevel
+   drvPaths; build the cp-03 runner and secure host toplevel before activation:
+
+   ```sh
+   nix build --no-update-lock-file --no-link \
+     .#nixosConfigurations.k8s-cp-03.config.microvm.declaredRunner \
+     .#nixosConfigurations.meablack-secure.config.system.build.toplevel
+   ```
+
+4. Follow [the timed meablack bridge cutover](operations.md#meablack-bridge-cutover).
+   Build/copy before arming rollback. Test the configuration, confirm SSH,
+   host addressing/default route on br0 and the TAP attachment, then commit
+   it before provisioning any join token. Merging this change does not deploy.
+5. Find cp-03's first DHCP lease by MAC `02:6b:38:00:00:03`, hostname
+   `k8s-cp-03`, and reserve the observed address. Do not assume `.105` or any
+   other free address. If it did not auto-start, start only
+   `microvm@k8s-cp-03` on meablack.
+6. Verify its SSH key, hostname, persistent ext4 `/var`, node-password symlink
+   and inactive K3s with `ConditionResult=no`, as for cp-02. Verify TCP 6443,
+   2379–2380, 10250 and Cilium TCP 4240/ICMP between all three guests. cp-01's
+   live TCP 4240 allowance must still be present; do not reboot it to apply it.
+7. Use the shared token provisioning procedure with cp-03's reserved IP.
+
+## Accept the third member
+
+Wait for cp-03 registration before using `kubectl wait` on its Node object:
+`NotFound` means it has not registered yet, not necessarily a failed join.
+Confirm all three Nodes are Ready with distinct IPs and server/etcd roles,
+Cilium and Envoy are Running on each, and both Cilium status and health show
+3/3 reachability from every agent. Check DNS/service routing, metrics on all
+three, and bidirectional Pod-IP and Service-DNS HTTP traffic across the
+physical-host boundary (cp-01/cp-02 to cp-03).
+
+Inspect K3s/etcd member admission, learner promotion and health before treating
+cp-03 as a healthy voter; node roles alone do not prove etcd quorum health.
+Only after three healthy voters are confirmed may a single guest restart be
+planned for persistence acceptance. Preserve its runner and state and recheck
+all health after the restart; do not restart multiple members together.
+Even with three voters, losing meawhite removes two: this is not host-level HA.
+Encrypted off-host backup/restore verification remains explicitly deferred.

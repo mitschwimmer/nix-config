@@ -69,10 +69,96 @@ Do not open VXLAN/8472: the cluster uses Cilium native routing.
 
 ## Join credential lifecycle
 
-cp-02's `/var/lib/rancher/k3s/join-token` stays root:root 0600 on persistent
+Each joiner's `/var/lib/rancher/k3s/join-token` stays root:root 0600 on persistent
 `/var`. Keep it for subsequent starts; K3s must not start with a missing,
 empty or improperly protected file. Provision it through the SSH procedure in
 [bootstrap.md](bootstrap.md), never through a Nix derivation or token literal.
 A future server-token rotation must also update this runtime file using a
-controlled procedure before restarting cp-02. Do not rotate tokens implicitly
+controlled procedure before restarting a joiner. Do not rotate tokens implicitly
 as part of expansion or remove a member's state to troubleshoot a join.
+
+## Meablack bridge cutover
+
+First activation of `eno1` into `br0` can disconnect SSH. Use the following
+staged procedure after review/builds, without changing meawhite. It tests
+runtime networking before installing a boot configuration. The 15-minute
+rollback timer runs on meablack independently of SSH; it is not persistent
+across a host reboot. Do not reboot during this test. Console access remains
+the fallback if reverting the old networking configuration cannot recover it.
+Do not provision cp-03's token until the cutover is confirmed and committed.
+
+On the workstation, from the clean reviewed checkout, build and copy the host
+closure **before** arming rollback:
+
+```sh
+new_system=$(nix build --no-update-lock-file --no-link --print-out-paths \
+  .#nixosConfigurations.meablack-secure.config.system.build.toplevel)
+nix copy --to ssh://root@192.168.1.28 "$new_system"
+```
+
+On meablack, as root, preserve the currently running closure and arm rollback.
+If units with these names already exist, inspect the previous attempt first;
+do not reuse an active timer or overwrite the recovery root blindly.
+
+```sh
+old_system=$(readlink -f /run/current-system)
+nix-store --realise "$old_system" \
+  --add-root /nix/var/nix/gcroots/meablack-before-cp03
+systemd-run --unit=meablack-network-rollback --on-active=15m \
+  --timer-property=AccuracySec=1s --property=Type=oneshot \
+  "$old_system/bin/switch-to-configuration" test
+systemctl is-active meablack-network-rollback.timer
+```
+
+From the same workstation shell holding `new_system`, start the test in a
+host-managed service so that activation survives the SSH connection dropping:
+
+```sh
+ssh -n root@192.168.1.28 \
+  "systemd-run --no-block --unit=meablack-bridge-test \
+   --property=Type=oneshot --property=RemainAfterExit=yes \
+   $new_system/bin/switch-to-configuration test"
+```
+
+Reconnect to `192.168.1.28` and inspect. The test must finish successfully
+(`active`, `exited`, `Result=success`), `br0` must have the retained MAC and
+host address, the default route must use `br0`, and `eno1` plus the guest TAP
+must be bridge members. The uplink must have no separate IPv4 lease.
+
+```sh
+systemctl show meablack-bridge-test.service -p ActiveState -p SubState -p Result
+ip -br link
+ip -br -4 address
+ip -4 route
+bridge link
+systemctl status microvm@k8s-cp-03 --no-pager
+systemctl list-timers meablack-network-rollback.timer --no-pager
+```
+
+If the test fails or SSH cannot reconnect, let rollback run and inspect its
+journal from the recovered connection or console. It restores the old runtime
+closure using `test`; the boot configuration was never committed. Do not join
+cp-03, rerun the cutover blindly, or delete its newly created state image.
+An existing image after a failed attempt must be inspected before retrying.
+
+Only after successful network checks, **before the timer expires**, on meablack:
+
+```sh
+systemctl stop meablack-network-rollback.timer
+```
+
+If rollback has already fired, do not commit; inspect/reconcile the running
+configuration first. Otherwise, from the unchanged workstation checkout,
+commit the same successfully tested configuration:
+
+```sh
+nixos-rebuild switch --flake .#meablack-secure --target-host root@192.168.1.28
+```
+
+Recheck SSH/address/routes and guest status. Leave the old closure GC-rooted
+until host/guest acceptance is complete. Do not reboot either existing etcd
+member. Continue with cp-03's DHCP reservation and inactive-service checks in
+[bootstrap.md](bootstrap.md#stage-cp-03-on-meablack), then provision its token.
+
+References: [NixOS configuration changes](https://nixos.org/manual/nixos/stable/#sec-changing-config),
+[systemd transient services/timers](https://www.freedesktop.org/software/systemd/man/latest/systemd-run.html).

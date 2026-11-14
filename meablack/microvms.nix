@@ -1,12 +1,12 @@
 { ... }:
 {
-  # Discover the wired NIC and its MAC on meablack before creating the bridge.
-  # Host address: 192.168.1.28. Do not infer the NIC name from meawhite.
+  # Observed 2026-11-14: eno1, 192.168.1.28/24, gateway 192.168.1.1.
+  # Retain the uplink MAC on br0; first activation uses timed rollback.
   services.kubernetesMicrovms = {
-    enable = false;
+    enable = true;
     bridge = "br0";
-    uplink = null;
-    bridgeMac = null;
-    guests = [ ];
+    uplink = "eno1";
+    bridgeMac = "24:4b:fe:03:c4:69";
+    guests = [ "k8s-cp-03" ];
   };
 }
