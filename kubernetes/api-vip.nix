@@ -1,13 +1,15 @@
-{ lib, pkgs, name, node, ... }:
+{ config, lib, pkgs, name, node, ... }:
 
 let
   # Run on the guest host stack, independently of Kubernetes/Cilium.
   apiReady = pkgs.writeShellScript "check-k3s-api-ready" ''
     set -eu
-    # Only the local /readyz probe skips TLS verification. API clients do not.
-    response="$("${lib.getExe pkgs.curl}" --silent --show-error --fail \
-      --insecure --connect-timeout 1 --max-time 2 \
-      https://127.0.0.1:6443/readyz)" || exit 1
+    # K3s denies anonymous /readyz requests (HTTP 401). Use its runtime
+    # admin kubeconfig without copying credentials into the Nix store.
+    response="$("${config.services.k3s.package}/bin/k3s" kubectl \
+      --kubeconfig=/etc/rancher/k3s/k3s.yaml \
+      --server=https://127.0.0.1:6443 \
+      --request-timeout=2s get --raw=/readyz 2>/dev/null)" || exit 1
     test "$response" = ok
   '';
   priority =
