@@ -1,8 +1,9 @@
 # Bootstrap k8s-cp-01
 
-Only `k8s-cp-01` is enabled on meawhite; both physical hosts use Secure Boot.
-cp-02 is prepared for a token-file join; activate it only through the staged
-procedure below after assigning its DHCP reservation.
+Both physical hosts use Secure Boot. meawhite enables cp-01 and cp-02;
+cp-01 initializes the cluster, while a fresh cp-02 boots without K3s until
+its join token is provisioned. Follow the cp-02 staging procedure below to
+obtain its first DHCP lease before reserving the address and joining.
 
 ## Prerequisites
 
@@ -93,17 +94,19 @@ ssh root@192.168.1.103 'k3s kubectl get nodes; k3s kubectl get pods -A'
 ## Stage cp-02 without joining
 
 This is an activation procedure after PR review, successful evaluation/builds
-and an explicit deployment decision. Preparing or merging the PR does not
-start cp-02: `meawhite/microvms.nix` still lists only cp-01.
+and an explicit deployment decision. Merging does not deploy the host.
+`meawhite/microvms.nix` now lists cp-01 and cp-02; other guests stay disabled.
+A DHCP reservation is not required to boot a fresh cp-02 for its first lease.
 
-1. Recheck cp-01's node/pod health. Reserve `192.168.1.103` for cp-01
-   and a distinct, observed LAN address for cp-02 MAC `02:6b:38:00:00:02`.
-   Confirm CPU/RAM/disk capacity and direct L2 reachability on `br0`.
-2. Preserve cp-01's booted runner as a GC root using [operations.md](operations.md).
+1. Recheck cp-01's node/pod health and retain its observed address
+   `192.168.1.103` (reserve its existing lease). Confirm CPU/RAM/disk capacity
+   and direct L2 reachability on `br0`.
+2. Confirm cp-02 has no preexisting state image under
+   `/var/lib/microvms/k8s-cp-02/state.img` on meawhite. If it exists, stop here
+   and inspect its history: an existing join token could allow an immediate
+   join when booted. Do not delete state or clone cp-01's image.
+3. Preserve cp-01's booted runner as a GC root using [operations.md](operations.md).
    Record its current/booted links. Do not restart cp-01.
-3. In a reviewed activation change, set the host guest list to
-   `[ "k8s-cp-01" "k8s-cp-02" ]`. Update the corresponding live-host
-   expectation in `tests/microvms.nix` to match; leave all other guests disabled.
 4. Run the MicroVM evaluation above, evaluate both `meawhite` and
    `meawhite-secure` toplevel drvPaths, and build the cp-02 declared runner
    and `meawhite-secure` toplevel with `--no-update-lock-file`.
@@ -111,10 +114,31 @@ start cp-02: `meawhite/microvms.nix` still lists only cp-01.
    may start automatically; otherwise start only `microvm@k8s-cp-02` on
    meawhite. No join occurs without its token file. Existing cp-01 keeps its
    booted runner (`restartIfChanged = false`).
-6. Verify cp-02's DHCP address and SSH host key via a trusted channel.
-   Check `findmnt /var`, its distinct hostname and the node-password symlink.
-   K3s should be inactive with `ConditionPathExists` unmet. Never clone cp-01's
-   state image or provision an existing, unrelated etcd data directory.
+6. Find the newly issued lease in the router's DHCP lease table by MAC
+   `02:6b:38:00:00:02` (hostname `k8s-cp-02`). Reserve that observed address.
+   Do not assign an invented address. If the reservation changes the address,
+   wait for the guest to obtain it and verify the effective lease again.
+7. Verify cp-02's SSH host key via a trusted channel. Check `findmnt /var`,
+   its distinct hostname and the node-password symlink. K3s should be inactive
+   with `ConditionPathExists` unmet. Verify the token is absent before
+   proceeding. Only after the lease is reserved, provision the token below.
+
+```sh
+CP02_IP="REPLACE_WITH_OBSERVED_CP02_IP"
+ssh -o StrictHostKeyChecking=yes root@"$CP02_IP" '
+  set -eu
+  findmnt /var
+  hostname
+  readlink -f /etc/rancher/node
+  test ! -e /var/lib/rancher/k3s/join-token
+  systemctl show k3s -p ActiveState -p ConditionResult
+'
+```
+
+Expect hostname `k8s-cp-02`, persistent ext4 `/var`, node identity under
+`/var/lib/rancher/node`, `ActiveState=inactive` and `ConditionResult=no`.
+If K3s is already active, stop the procedure and inspect the existing state
+before supplying or changing credentials.
 
 Before the join, both guests must allow TCP 6443, 2379–2380, 10250 and
 Cilium health TCP 4240 plus ICMP. The existing TCP 9345 allowance is retained;
