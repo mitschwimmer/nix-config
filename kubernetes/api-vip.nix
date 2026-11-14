@@ -16,6 +16,8 @@ let
     else 130;
 in
 lib.mkIf (node.role == "server") {
+  # Also make the readiness probe easy to run by hand during failover tests.
+  environment.systemPackages = [ pkgs.curl ];
   services.keepalived = {
     enable = true;
     enableScriptSecurity = true;
