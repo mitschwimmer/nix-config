@@ -12,7 +12,7 @@ in
     enable = true;
     role = node.role;
     clusterInit = bootstrapServer;
-    # Staging endpoint shared with Cilium; no VIP or host-level HA yet.
+    # Keep joiners on cp-01 until the independent VIP passes failover tests.
     serverAddr = lib.mkIf joiningNode "https://192.168.1.103:6443";
     tokenFile = lib.mkIf joiningNode joinTokenFile;
 
@@ -24,6 +24,8 @@ in
       "--disable-network-policy"
       "--disable-kube-proxy"
       "--secrets-encryption"
+      # The VIP SAN must be served by every control plane before client cutover.
+      "--tls-san=192.168.1.110"
     ] ++ lib.optional (name == "k8s-cp-02")
       "--node-taint=node-role.kubernetes.io/control-plane=true:NoSchedule";
     # cp-01 creates the persistent server token. Joiners receive a runtime
